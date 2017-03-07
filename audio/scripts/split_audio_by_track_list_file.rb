@@ -1,7 +1,29 @@
 #
-# split_audio_by_track_list_file.rb
+#   split_audio_by_track_list_file.rb
+#   =================================
+#   Splits an audio file by using trac durations from a track list text file
+#   Creates multiple audio files from the original file
 #
+#   Can be useful for
+#   - converting old vynil recordings
+#   - converting old tape recordings
+#   - ...
 #
+#   Copyright (C) 2016 Pedro Mendes da Silva 
+# 
+#   This program is free software; you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation; either version 2 of the License, or
+#   (at your option) any later version.
+# 
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+# 
+#   You should have received a copy of the GNU General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 
 def convert_chapter start_time,end_time,file_index, track_name
@@ -42,7 +64,7 @@ def parse_track_list tracks_text_file
   return tracks_list
 end
 
-
+# TODO: automate dependencies and directories (currently hardcoded)
 FFMPEG_PATH="D:\\Program Files (x86)\\FFmpeg for Audacity\\"
 EAC3TO_PATH="D:\\Program Files (x86)\\eac3to331\\"
 TARGET_PATH="G:.\\"
@@ -58,8 +80,6 @@ SILENCE_BETWEEN_TRACKS = 2
 #PREVIEW=true
 PREVIEW=false
 
-
-
 puts "split_audio_by_track_list_file.rb - Splits audio by track list"
 puts "-------------\n\n"
 
@@ -70,9 +90,6 @@ puts "Splitting...\n\n"
 puts stats_raw
 
 tracks = parse_track_list stats_raw
-
-#silence_end_list = stats_raw.scan(/silence_end: -?([0-9]+\.[0-9])+/)
-#silence_start_list = stats_raw.scan(/silence_start: -?([0-9]+\.[0-9])+/)
 
 print "tracks= #{tracks}\n\n"
 
