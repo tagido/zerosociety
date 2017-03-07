@@ -1,7 +1,24 @@
 #
-# dvd_extract_and_stabilize.rb
+#   mp4_deinterlace_and_stabilize.rb
+#   ================================
+#   Deinterlaces and stabilizes a set of .mp4 files
 #
-#
+#   Copyright (C) 2016 Pedro Mendes da Silva 
+# 
+#   This program is free software; you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation; either version 2 of the License, or
+#   (at your option) any later version.
+# 
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+# 
+#   You should have received a copy of the GNU General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+
 require 'ostruct'
 
 origin = OpenStruct.new
@@ -14,65 +31,6 @@ def wait_for_spacebar
    sleep 1 while $stdin.getc != " "
 end
 
-def get_No_of_DVD_titles
-
-
-result = system "\"#{HANDBRAKECLI_PATH}HandBrakeCLI.exe\" --scan -t 0 -i #{DVD_PATH} 2> dvd_chapters.all_titles.handbrake.txt"
-
-if (result == false) 
-  print "#### Could not read DVD structure, exiting ... \n"
-  exit
-end
-
-stats_raw = `type dvd_chapters.all_titles.handbrake.txt`
-
-print stats_raw
-
-# ex: [20:05:39] scan: DVD has 3 title(s)
-
-n_titles = stats_raw.scan(/DVD has ([0-9]+) title/)
-
-print "n_titles=#{n_titles[0][0]}\n"
-
-end
-
-def get_DVD_MediaInfo
-
-	result = system "\"#{DVD_MEDIA_INFO_PATH}dvd+rw-mediainfo.exe\" \\\\.\\e: > #{TARGET_PATH}\\dvd_info.media_info.txt"
-
-	if (result == false) 
-		print "#### Could not read DVD structure, exiting ... \n"
-		exit
-	end	
-
-	stats_raw = `type #{TARGET_PATH}\\dvd_info.media_info.txt`
-
-	print stats_raw
-
-	mediainfo = OpenStruct.new
-	
-	mediainfo.n_sessions = stats_raw.scan(/Number of Sessions:    ([0-9]+)/)[0][0]
-	mediainfo.disc_status = stats_raw.scan(/Disc status:           (.+)/)[0][0]
-	
-	print "\n\nN_sessions = #{mediainfo.n_sessions}\n"
-	print "disc status = #{mediainfo.disc_status}\n"
-	
-	print "===============================\n\n"
-	
-	return stats_raw
- 
-end
-
-def get_VOB_file_names
-
-   file_names = `cmd.exe /c dir /b /s #{DVD_PATH}VTS_0#{DVD_VTS_INDEX}_*.VOB` 
-
-   concat_filenames = file_names.gsub(/\n/, "|").chomp('|')
-
-   puts "VOB files: #{concat_filenames}\n"
-   
-   return concat_filenames
-end
 
 
 def conv_hhmmss_to_seconds time_string
@@ -83,39 +41,6 @@ def conv_hhmmss_to_seconds time_string
  
 end
 
-def extract_chapter_jpg_thumbnail start_time, file_index, dvd_title_number, track_filename
-#ffmpeg -i test.mp4 -ss 00:01:14.35 -vframes 1 out2.png
-
-   jpg_start_time = "0:15"
-
-   conv_command = "\"#{FFMPEG_PATH}ffmpeg.exe\" -i \"#{DVD_AUDIO_TMP_FILENAME}\" -ss #{jpg_start_time} -vframes 1 \"#{track_filename}.jpg\""
-
-   puts "#{conv_command}\n"
-   puts "Running thumbnail extraction for Track #{file_index} ...\n"
-   system "#{conv_command}\n"
-   
-end
-
-def extract_jpg_thumbnails tmp_vob_filename
-#ffmpeg -i test.mp4 -ss 00:01:14.35 -vframes 1 out2.png
-
-   #system "del #{TARGET_PATH}*.png"
-
-   system "mkdir #{tmp_vob_filename}.images"
-   
-   conv_command = "\"#{FFMPEG_PATH}ffmpeg.exe\" #{FFMPEG_HDACCEL} -i #{tmp_vob_filename} -vf \"scale=720:576,yadif,fps=1/60\"  \"#{tmp_vob_filename}.images\\img%03d.png\" "
-
-   puts "#{conv_command}\n"
-   puts "Running thumbnail extraction for DVD ...\n"
-   system "#{conv_command}\n"
-   
-end
-
-def extract_full_vob_file dvd_drive,tmp_vob_filename
-
-	system "\"#{DD_PATH}dd\" bs=2048 skip=15888 count=2282000 if=\\\\.\\#{dvd_drive} > \"#{tmp_vob_filename}\""
-
-end
 
 def convert_chapter input_file_name,file_index
 	date=  "2016"
@@ -146,10 +71,7 @@ def check_mp4_files directory
 	caps = unibanco_files.scan(/(.*)\n/)
 
 	puts "Found files:\n #{caps} \n\n"
-
-	#
-	#track_no = 1
-
+	
 	index = 1
 	
 	caps.each do |i|
@@ -165,31 +87,20 @@ def check_mp4_files directory
 
 end
 
-
-#FFMPEG_PATH="D:\\Program Files (x86)\\FFmpeg for Audacity\\"
+# TODO: automate dependencies and directories (currently hardcoded)
 FFMPEG_PATH="D:\\Program Files\\ffmpeg-20161210\\bin\\"
 FFMPEG_HDACCEL="-hwaccel dxva2 -threads 1"
 HANDBRAKECLI_PATH="D:\\Program Files\\Handbrake\\"
 DD_PATH="D:\\Downloads\\dd-0.6beta3\\"
 DVD_MEDIA_INFO_PATH="D:\\Downloads\\dd-0.6beta3\\"
 
-DVD_PATH="E:"
-
-#DVD_PATH="\"H:\\DVDs Musicais\\Tony Carreira\\\""
-#DVD_PATH="\"H:\\DVDs Musicais\\FengShui\\\""
-#DVD_PATH="H:.\\"
-
-DVD_VOB_PATH="#{DVD_PATH}VIDEO_TS\\"
-#DVD_VOB_CONCAT_LIST="#{DVD_VOB_PATH}VTS_01_0.VOB\|#{DVD_VOB_PATH}VTS_01_1.VOB\|#{DVD_VOB_PATH}VTS_01_2.VOB\|#{DVD_VOB_PATH}VTS_01_3.VOB\|#{DVD_VOB_PATH}VTS_01_4.VOB"
-
 time = Time.now.getutc
 time2 = time.to_s.delete ': '
 
-time2 = "001B2AltoDosLombos_95_Beja_Incenso_EUA92"
+#time2 = "tmp"
 
 TARGET_PATH="G:\\temp\\dvd_extract_and_stabilize\\dvd.#{time2}"
 
-tmp_vob_filename = "#{TARGET_PATH}\\dvd_full.vob"
 tmp_vectors_filename = "#{TARGET_PATH}\\transform_vectors.trf"
 target_video_filename = "#{TARGET_PATH}\\dvd_full.mp4"
 
@@ -200,19 +111,7 @@ system "mkdir \"#{TARGET_PATH}\""
 
 PAUSE=false
 
-
 puts "\nmp4_deinterlace_and_stabilize.rb - Deinterlace and stabilize mp4 video"
 puts "-------------\n\n"
-
-
-#get_VOB_file_names
-
-#get_No_of_DVD_titles
-
-#get_DVD_MediaInfo
-#extract_jpg_thumbnails 
-
-#extract_full_vob_file DVD_PATH, tmp_vob_filename
-#extract_jpg_thumbnails tmp_vob_filename
 
 check_mp4_files "."
