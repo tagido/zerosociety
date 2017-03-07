@@ -1,9 +1,27 @@
 #
-# mp3_to_mp4.rb
+#   mp3_to_mp4.rb
+#   =============
 #
-# Creates an mp4 video with the given mp3 audio file and an image
-# Video duration is set to the mp3 duration
+#   Creates an mp4 video with the given mp3 audio file and an image.
+#   The video duration is set to the mp3 duration.
 #
+#   Copyright (C) 2016 Pedro Mendes da Silva 
+# 
+#   This program is free software; you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation; either version 2 of the License, or
+#   (at your option) any later version.
+# 
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+# 
+#   You should have received a copy of the GNU General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+
+
 
 def get_mp3_duration file
 
@@ -18,6 +36,7 @@ def get_mp3_duration file
 	return duration[0]
 end
 
+# TODO: automate dependencies and directories (currently hardcoded)
 FFMPEG_PATH="D:\\Program Files (x86)\\FFmpeg for Audacity\\"
 EAC3TO_PATH="D:\\Program Files (x86)\\eac3to331\\"
 TARGET_PATH=".\\"
