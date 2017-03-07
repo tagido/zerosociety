@@ -3,8 +3,29 @@
 # ===============================
 # Convert "Kindle e-Reader" notes to other formats
 #
+# Currently supported input formats:
+# - "My Clippings.txt" file (from a Kindle e-Reader)
+#    ( TODO: support multiple device locales (PT-pt hardcoded for now, for dates)  )
+#
+# Currently supported output formats:
 # - ".psv" (pipe-separated values)
 # - ".mm" Mind-Map
+#
+#   Copyright (C) 2016 Pedro Mendes da Silva 
+# 
+#   This program is free software; you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation; either version 2 of the License, or
+#   (at your option) any later version.
+# 
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+# 
+#   You should have received a copy of the GNU General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
 
 require 'time'
@@ -19,7 +40,6 @@ def get_current_time_str_for_filename
 	return time2
 	
 end
-
 
 
 #
@@ -269,17 +289,14 @@ def kindle_get_entries_from_txt_file kindle_file
 end
 
 
-
-
+# TODO: automate dependencies and directories (currently hardcoded)
 DOWNLOADS_PATH="C:\\Users\\tagido\\Downloads"
 KINDLE_CLIPPINGS_PATH="#{DOWNLOADS_PATH}\\My Clippings.txt"
 
 puts "process_kindle_clippings2xml.rb - ..."
 puts "-------------\n\n"
 
-
 entries = kindle_get_entries_from_txt_file KINDLE_CLIPPINGS_PATH
-
 
 time = Time.now.getutc
 #time2 = time.to_s.delete ': '
@@ -290,7 +307,4 @@ TARGET_PATH="#{KINDLE_CLIPPINGS_PATH}.exported\\kindle_clippings#{time2}"
 print "mkdir \"#{TARGET_PATH}\"\n"
 system "mkdir \"#{TARGET_PATH}\""
 
-
 kindle_convert_TXT_2_XML entries, TARGET_PATH
-
-#smsbackup_convert_XML_2_EML entries, "@facebook", "Pedro Mendes da Silva", TARGET_PATH
