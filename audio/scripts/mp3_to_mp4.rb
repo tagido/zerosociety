@@ -21,6 +21,8 @@
 #   along with this program; if not, write to the Free Software
 #   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
+require_relative "../../framework/scripts/framework_utils.rb"
+
 
 
 def get_mp3_duration file

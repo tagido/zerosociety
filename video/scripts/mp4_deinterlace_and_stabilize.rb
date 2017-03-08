@@ -19,27 +19,16 @@
 #   along with this program; if not, write to the Free Software
 #   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
+require_relative "../../framework/scripts/framework_utils.rb"
+
 require 'ostruct'
+
 
 origin = OpenStruct.new
 origin.x = 0
 origin.y = 0
 
-# Wait for the spacebar key to be pressed
-def wait_for_spacebar
-   print "Press space to continue ...\n"
-   sleep 1 while $stdin.getc != " "
-end
 
-
-
-def conv_hhmmss_to_seconds time_string
-
- seconds = "#{time_string}".split(':').map { |a| a.to_i }.inject(0) { |a, b| a * 60 + b}
-
- return seconds
- 
-end
 
 
 def convert_chapter input_file_name,file_index
@@ -63,12 +52,12 @@ end
 
 def check_mp4_files directory
 
-	puts "Checking for unibanco files ..."
+	puts "Checking for video files ..."
 	puts "-------------\n\n"
 
-	unibanco_files= `dir #{directory}\\*.mp4 /b /s`
+	video_files= `dir #{directory}\\*.mp4 /b /s`
 
-	caps = unibanco_files.scan(/(.*)\n/)
+	caps = video_files.scan(/(.*)\n/)
 
 	puts "Found files:\n #{caps} \n\n"
 	
