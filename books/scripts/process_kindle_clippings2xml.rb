@@ -29,17 +29,8 @@
 #
 
 require 'time'
+require_relative "../../framework/scripts/framework_utils.rb"
 
-# Time functions
-
-def get_current_time_str_for_filename
-
-	time = Time.now.getutc
-	time2 = time.to_s.delete ': '
-
-	return time2
-	
-end
 
 
 #

@@ -20,16 +20,9 @@
 #   along with this program; if not, write to the Free Software
 #   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
-# Time functions
+require_relative "../../framework/scripts/framework_utils.rb"
 
-def get_current_time_str_for_filename
 
-	time = Time.now.getutc
-	time2 = time.to_s.delete ': '
-
-	return time2
-	
-end
 
 
 
@@ -37,23 +30,7 @@ end
 # File converters
 #
 
-def convert_number_locale_from_PT_to_US number_str
-	
-	if number_str.nil?
-		return number_str
-	end
-	
-	#puts "original: #{number_str}\n"
-	
-	number_str_without_commas = number_str.delete(".")
-	
-	number_str_without_commas.gsub! ',', '.' 
-	
-	#puts "conv'd: #{number_str_without_commas}\n"
-	
-	return number_str_without_commas
-				
-end
+
 
 
 def create_target_dir target_dir
