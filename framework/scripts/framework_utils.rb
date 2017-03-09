@@ -77,7 +77,23 @@ end
 #
 
 
-def create__dir target_dir
+def create_dir target_dir
 	print "Creating directory: mkdir \"#{target_dir}\"  \n\n"
 	system "mkdir \"#{target_dir}\""
+	system "del \"#{target_dir}\"\\*.* /Q"
+end
+
+def copy_files_to_target_dir files, target_dir
+	print "Copying files: #{files} to \"#{target_dir}\"  \n\n"
+	system "xcopy #{files} \"#{target_dir}\""
+end
+
+def dump_file_from_string target_filename, string
+
+	print "Writing file: #{target_filename}\"  ...\n\n"
+
+	File.open(target_filename, 'w') { 
+			|file| file.write(string)
+	}
+	
 end

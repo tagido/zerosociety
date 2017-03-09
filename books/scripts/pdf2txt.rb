@@ -44,17 +44,26 @@ end
 def extract_png_from_pdf source_path, target_dir
 	puts "Extracting PNG files from #{source_path} ... \n\n"
 	
+	page_index = 1
+	result = true
+	
+	while result == true do
+	
 	# -density 300 
-	command = "\"#{IMAGEMAGICK_PATH}\\magick.exe\" -density 300  \"#{source_path}\" \"#{target_dir}\\png\\page.png\""
+		command = "\"#{IMAGEMAGICK_PATH}\\magick.exe\" -density 300  \"#{source_path}\"[#{page_index}] \"#{target_dir}\\png\\page#{page_index}.png\""
 
-	puts "### Executing: #{command}"
-	system command
+		puts "### Page #{page_index} - Executing: #{command}"
+		result = system command
+		
+		page_index = page_index + 1
+	end
+		
 end
 
 def extract_txt_from_png source_path
 
 	puts "Extracting TXT files from #{source_path} ... \n\n"
-	
+		
 	png_files= `dir #{source_path}\\png\\*.png\ /b /s /od`
 	
 	caps = png_files.scan(/(.*)\n/)
