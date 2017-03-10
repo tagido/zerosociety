@@ -20,6 +20,8 @@
 #   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 require 'time'
+require 'ostruct'
+
 
 # Wait for the spacebar key to be pressed
 def wait_for_spacebar
@@ -71,6 +73,67 @@ def convert_number_locale_from_PT_to_US number_str
 				
 end
 
+#
+# Zipping and Unzipping
+#
+
+# TODO : automate dependencies and port to Linux, MacOS
+#
+# Refs: https://sevenzip.osdn.jp/chm/cmdline/switches/method.htm
+
+SEVENZIP_PATH="\"c:\\Program Files\\7-Zip\\7z.exe\""
+
+def unzip_archive source_archive, target_dir
+
+	#print "#{SEVENZIP_PATH} x \"#{source_archive}\" -y -o\"#{target_dir}\" \n"
+
+	result = system "#{SEVENZIP_PATH} x \"#{source_archive}\" -y -o\"#{target_dir}\""
+
+	return result
+end
+
+def zip_dir_to_archive source_dir, target_archive
+
+	system "del #{target_archive} /Q"
+
+	# Workaround for EPUB as described in https://sourceforge.net/p/sevenzip/feature-requests/1212/
+	
+	system "ren \".\\#{source_dir}\\mimetype\" !mimetype"
+	
+	system "#{SEVENZIP_PATH} a \"#{target_archive}\" -mx0 -r -y \".\\#{source_dir}\\mimetype\""
+	
+	result = system "#{SEVENZIP_PATH} a \"#{target_archive}\" -mx0 -r -y \".\\#{source_dir}\\*\" -x!\".\\#{source_dir}\\mimetype\""
+
+	system "#{SEVENZIP_PATH} rn \"#{target_archive}\" !mimetype mimetype"
+	
+	system "ren \".\\#{source_dir}\\!mimetype\" mimetype"
+	
+	return result
+end
+
+#
+# Resources
+#
+
+RESOURCES_MANAGER = OpenStruct.new
+
+def resources_init current_code_file
+	
+	RESOURCES_MANAGER.root_dir = "#{File.dirname(current_code_file)}\\resources"
+	
+end
+
+def resources_get_root_dir
+	
+	return RESOURCES_MANAGER.root_dir
+
+end
+	
+def resources_get_subdir subdir_name
+
+	return "#{RESOURCES_MANAGER.root_dir}\\#{subdir_name}"
+
+end
 
 #
 # Files and directories

@@ -25,19 +25,14 @@
 
 require_relative "../../framework/scripts/framework_utils.rb"
 
-# TODO: automate dependencies and directories (currently hardcoded)
-FFMPEG_PATH="D:\\Program Files (x86)\\FFmpeg for Audacity\\"
-EAC3TO_PATH="D:\\Program Files (x86)\\eac3to331\\"
-BLURAY_PATH="G:."
-TARGET_PATH="G:.\\"
 
 
-def html_ebook_start
+def html_ebook_start metadata
 	string = "<html xmlns=\"http://www.w3.org/1999/xhtml\">\n"
+	string = string + "<head>\n"
+	string = string + "<title>#{metadata.title}</title>\n"
+	string = string + "</head>\n"
 	string = string + "<body>\n"
-	string = string + "<style>\n"
-	string = string + ".video_frame_caption { font-size: 1.5em;}\n"
-	string = string + "</style>\n"
 	
 	# TODO: encoding, metadata, style, multiple pages
 	# TODO: image metadata
@@ -52,7 +47,7 @@ def html_ebook_end
 end
 
 def html_ebook_add_image image_name
-	string = "<img class=\"video_frame\" src=\"#{image_name}\"></img>\n"
+	string = "<p><img class=\"video_frame\" alt=\"#{image_name}\" src=\"#{image_name}\"></img></p>\n"
 	# string = string + "<p class=\"video_frame_caption\">#{image_name}</p>\n"
 	
 	# TODO: no caption
@@ -66,23 +61,24 @@ def html_ebook_add_link file_name, description
 	return string
 end
 
-def epub_content_opf_start
+def epub_content_opf_start metadata
 
 	# TODO: real metadata: title, author, ...
 
 	string = "<?xml version='1.0' encoding='utf-8'?>\n"
 	string = string + "<package xmlns=\"http://www.idpf.org/2007/opf\" unique-identifier=\"uuid_id\" version=\"2.0\">\n"
 	string = string + "<metadata xmlns:calibre=\"http://calibre.kovidgoyal.net/2009/metadata\" xmlns:dcterms=\"http://purl.org/dc/terms/\" xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:opf=\"http://www.idpf.org/2007/opf\">\n"
-	string = string + "  <dc:title>zerosociety</dc:title>\n"
-	string = string + "  <dc:creator opf:role=\"aut\" opf:file-as=\"zerosociety\">zerosociety</dc:creator>\n"
+	string = string + "  <dc:title>#{metadata.title}</dc:title>\n"
+	string = string + "  <dc:creator opf:role=\"aut\" opf:file-as=\"zerosociety\">#{metadata.author}</dc:creator>\n"
 	string = string + "  <dc:identifier id=\"uuid_id\" opf:scheme=\"uuid\">f07bb25c-ab9d-4252-b23f-4943dd8259c4</dc:identifier>\n"
 	string = string + "  <dc:date>0101-01-01T00:00:00+00:00</dc:date>\n"
 	string = string + "  <dc:contributor opf:role=\"bkp\">zerosociety</dc:contributor>\n"
 	string = string + "  <dc:subject>zerosociety</dc:subject>\n"
+	string = string + "  <dc:language>english</dc:language>\n"
 	string = string + "  <dc:identifier opf:scheme=\"calibre\">f07bb25c-ab9d-4252-b23f-4943dd8259c4</dc:identifier>\n"
 	string = string + "  <meta name=\"calibre:timestamp\" content=\"2017-03-05T11:52:27.546000+00:00\"/>\n"
 	# TODO: string = string + "  <meta name=\"cover\" content=\"cover\"/>\n"
-	string = string + "  <meta name=\"calibre:title_sort\" content=\"zerosociety\"/>\n"
+	string = string + "  <meta name=\"calibre:title_sort\" content=\"#{metadata.author}\"/>\n"
 	string = string + "</metadata>\n"
 	string = string + "<manifest>\n"
 	
@@ -96,7 +92,7 @@ end
 
 def epub_content_opf_end_manifest_start_spine 
 	
-	string = "</manifest>\n<spine>\n"
+	string = "</manifest>\n<spine toc=\"ncx\">\n"
 	
 	# TODO: NCX
 	
@@ -120,14 +116,12 @@ def epub_content_opf_end first_page
 	return string
 end
 
-def images_to_html_ebook directory, target_filename
+def images_to_html_ebook directory, target_filename, metadata
 
 	image_files = `dir #{directory}\\*.jpg\ /od /b` 
 	image_files = image_files + `dir #{directory}\\*.png\ /od /b` 
 
 	system "mkdir #{directory}\\ebook"
-
-	#system "\"#{FFMPEG_PATH}ffmpeg.exe\" -i \"#{SOURCE_DRIVE}\\MPEGAV\\AVSEQ01.DAT\"  -codec:a libmp3lame -qscale:a 2 \"#{TARGET_FILENAME}\".vcd.mp3"
 
 	caps = image_files.scan(/(.*)?\.(.*)?/)
 
@@ -135,14 +129,12 @@ def images_to_html_ebook directory, target_filename
 
 	image_no = 1
 
-	html_string = html_ebook_start 
+	html_string = html_ebook_start metadata
 	
 	caps.each do |i|
 	
 	   image_name = caps[image_no-1][0] + "." + caps[image_no-1][1] 
-	   puts "Value of local variable is #{image_no} .. #{image_name}"
-
-	   #system "\"#{FFMPEG_PATH}ffmpeg.exe\" -i \"#{SOURCE_DRIVE}\\MPEGAV\\#{i}.DAT\" -metadata track=\"#{track_no}\"  -codec:a libmp3lame -qscale:a 2 \"#{TARGET_FILENAME}\".vcd.#{track_no}.mp3"
+	   #puts "Value of local variable is #{image_no} .. #{image_name}"
 	   
 	   html_string = html_string + html_ebook_add_image(image_name)
 	   
@@ -151,9 +143,9 @@ def images_to_html_ebook directory, target_filename
 
 	html_string = html_string + html_ebook_end
 	
-	puts "book html:\n"
-	puts "-------------\n\n"
-	puts "#{html_string}\n"
+	#puts "book html:\n"
+	#puts "-------------\n\n"
+	#puts "#{html_string}\n"
 	
 	File.open(target_filename, 'w') { 
 			|file| file.write(html_string)
@@ -163,7 +155,13 @@ def images_to_html_ebook directory, target_filename
 end
 
 
-def images_to_multiple_html_files_ebook directory, target_directory
+def images_to_multiple_html_files_ebook directory, target_directory, metadata
+
+	if (metadata.nil?)
+		metadata = OpenStruct.new
+		metadata.title = "Title converted by Zerosociety"
+		metadata.author = "Unknown"
+	end
 
 	image_files = `dir #{directory}\\*.jpg\ /od /b` 
 	image_files = image_files + `dir #{directory}\\*.png\ /od /b` 
@@ -180,17 +178,17 @@ def images_to_multiple_html_files_ebook directory, target_directory
 	
 	first_page_filename = ""
 
-	index_file_html_string = html_ebook_start
+	index_file_html_string = html_ebook_start metadata
 	
-	content_opf_file_string = epub_content_opf_start
+	content_opf_file_string = epub_content_opf_start(metadata)
 	content_opf_spine_string = ""
 	
 	caps.each do |i|
 
-	   html_string = html_ebook_start
+	   html_string = html_ebook_start(metadata)
 	
 	   image_name = caps[image_no-1][0] + "." + caps[image_no-1][1] 
-	   puts "Value of local variable is #{image_no} .. #{image_name}"
+	   #puts "Value of local variable is #{image_no} .. #{image_name}"
    
 	    html_string = html_string + html_ebook_add_image(image_name)
 	   
@@ -200,11 +198,13 @@ def images_to_multiple_html_files_ebook directory, target_directory
 		
 		
 		# Indexes
-		
+
+		# TODO: option to use numbers instead of the file names as index entries
 		index_file_html_string = index_file_html_string + html_ebook_add_link("#{image_name}.xhtml", image_name)
 		
 		content_opf_file_string = content_opf_file_string + epub_content_opf_add_manifest_link("#{image_name}.xhtml", "id#{image_no}", "application/xhtml+xml")
-		content_opf_file_string = content_opf_file_string + epub_content_opf_add_manifest_link(image_name, "idimg#{image_no}", "image/png")
+		# TODO: determine image mimetype from file extension jpg => "image/jpeg" , png => "image/png"
+		content_opf_file_string = content_opf_file_string + epub_content_opf_add_manifest_link(image_name, "idimg#{image_no}", "image/jpeg")		
 		content_opf_spine_string = content_opf_spine_string + epub_content_opf_add_spine_link("id#{image_no}")
 	   
 		if image_no == 1
@@ -214,9 +214,9 @@ def images_to_multiple_html_files_ebook directory, target_directory
 		target_filename = "#{target_directory}\\#{image_name}.xhtml"
 		image_no = image_no + 1
 	
-		puts "page html:\n"
-		puts "-------------\n\n"
-		puts "#{html_string}\n"
+		#puts "page html:\n"
+		#puts "-------------\n\n"
+		#puts "#{html_string}\n"
 	
 		File.open(target_filename, 'w') { 
 			|file| file.write(html_string)
@@ -224,8 +224,11 @@ def images_to_multiple_html_files_ebook directory, target_directory
 	end
 
 	content_opf_file_string = content_opf_file_string + epub_content_opf_add_manifest_link("toc.xhtml", "idtoc", "application/xhtml+xml")
+	content_opf_file_string = content_opf_file_string + epub_content_opf_add_manifest_link("toc.ncx", "ncx", "application/x-dtbncx+xml")
+
 	content_opf_file_string = content_opf_file_string + epub_content_opf_end_manifest_start_spine 
-	content_opf_file_string = content_opf_file_string + + epub_content_opf_add_spine_link("idtoc") + content_opf_spine_string
+	content_opf_file_string = content_opf_file_string + epub_content_opf_add_spine_link("idtoc") + content_opf_spine_string
+	
 	content_opf_file_string = content_opf_file_string + epub_content_opf_end(first_page_filename)
 	
 	index_filename = "#{target_directory}\\toc.xhtml"
@@ -239,16 +242,42 @@ def images_to_multiple_html_files_ebook directory, target_directory
 	
 end
 
+# TODO: automate dependencies and directories (currently hardcoded)
+
+EPUBCHECK_PATH="d:\\Downloads\\epubcheck-3.0.1\\epubcheck-3.0.1\\"
+
+# checks for errors in the epub file
+def epub_check_file epub_file
+	system "java -jar #{EPUBCHECK_PATH}\\epubcheck-3.0.1.jar \"#{epub_file}\""
+end
 
 
 puts "images_to_ebook.rb - Converts a set of images to ebooks"
 puts "-------------\n\n"
 
-images_to_html_ebook ".", "index.html"
-images_to_multiple_html_files_ebook ".", "ebook"
+# TODO: optionally get metadata from the command line
+# TODO: get book file name from command-line
+# TODO: use the first image as the book cover
 
-# TODO: zip and rename to .epub
+metadata = OpenStruct.new
 
-#TODO: convert HTML to EPUB
+if ARGV[0].nil?
+	metadata.title = "Unknown Title"
+else
+	metadata.title = ARGV[0]
+end
+metadata.author = "Desconhecido"
+
+images_to_html_ebook ".", "index.html", metadata
+
+# TODO: a method with these steps
+images_to_multiple_html_files_ebook ".", "ebook", metadata
+resources_init __FILE__
+unzip_archive "#{resources_get_subdir("epub")}\\Template.epub.zip", "ebook"
+zip_dir_to_archive "ebook", "zeroconverted-#{metadata.title}.epub"
+
+epub_check_file "zeroconverted-#{metadata.title}.epub"
+
+
 
 # TODO: option to split images in 2 + remove some whitespace at the margins (for printed PPTs)
