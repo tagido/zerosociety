@@ -243,6 +243,13 @@ def images_to_multiple_html_files_ebook directory, target_directory, metadata
 	
 end
 
+# https://manual.calibre-ebook.com/generated/en/ebook-convert.html#pdf-output-options
+# "soffice --headless --convert-to pdf mySlides.odp"
+
+# \ebook-convert.exe" zeroconverted-Negoc.epub zeroconverted-Negoc.docx --docx-custom-page-size 1600x1000
+# ebookconv2.cmd zeroconverted-Negoc.epub zeroconverted-Negoc.pdf --custom-size 11x8
+# (inches)
+
 CALIBRE_PATH="C:\\Program Files\\Calibre2\\"
 def book_convert_EPUB_to_MOBI source, target
 
@@ -252,6 +259,17 @@ def book_convert_EPUB_to_MOBI source, target
 	
 end
 
+def book_convert_EPUB_to_PDF source, target
+
+	puts "=== Creating .PDF file (#{target}) ..."
+
+	# TODO: adjust target size based on the image sizes/aspect ration/orientation
+	
+	system "start \"PDF\" /WAIT \"#{CALIBRE_PATH}ebook-convert\" \"#{source}\" \"#{target}\" --custom-size 11x8"
+	
+end
+
+
 def images_to_EPUB_ebook source_directory, target_directory, metadata
 	images_to_multiple_html_files_ebook source_directory, target_directory, metadata
 	resources_init __FILE__
@@ -260,6 +278,7 @@ def images_to_EPUB_ebook source_directory, target_directory, metadata
 	epub_check_file "zeroconverted-#{metadata.title}.epub"
 	
 	book_convert_EPUB_to_MOBI "zeroconverted-#{metadata.title}.epub", "zeroconverted-#{metadata.title}.mobi"
+	book_convert_EPUB_to_PDF  "zeroconverted-#{metadata.title}.epub", "zeroconverted-#{metadata.title}.pdf"
 end
 
 
@@ -294,5 +313,4 @@ images_to_html_ebook ".", "index.html", metadata
 
 images_to_EPUB_ebook ".", "ebook", metadata
 
-
-# TODO: option to split images in 2 + remove some whitespace at the margins (for printed PPTs)
+# TODO: option to preview the generated ebooks
