@@ -63,7 +63,7 @@ def convert_number_locale_from_PT_to_US number_str
 	
 	#puts "original: #{number_str}\n"
 	
-	number_str_without_commas = number_str.delete(".")
+	number_str_without_commas = number_str.deletedelete(".")
 	
 	number_str_without_commas.gsub! ',', '.' 
 	
@@ -743,6 +743,12 @@ end
 def copy_and_rename_file_to_target_dir file, new_name, target_dir
 	print "Copying and renaming file: #{file} to \"#{target_dir}\"\\#{new_name}  \n\n"
 	system "xcopy #{file} \"#{target_dir}\"\\#{new_name}"
+end
+
+def delete_file target_archive
+	puts "Deleting \"#{target_archive}\"\n"
+	
+	system "del \"#{target_archive}\" /Q"
 end
 
 def dump_file_from_string target_filename, string

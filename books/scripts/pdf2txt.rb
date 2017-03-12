@@ -41,10 +41,32 @@ def create_target_dir target_dir
 	system "mkdir \"#{target_dir}\"\\txt"
 end
 
-def extract_png_from_pdf source_path, target_dir
+#
+# Crop manual: http://www.imagemagick.org/Usage/crop/#crop
+#
+def split_png source_file
+
+#\magick.exe" page?.png -shave 14%x10% -crop 100%x44% page1_%d.png
+
+	shave_and_crop_params = "-shave 14%x10% -crop 100%x44%"
+
+ 	command = "\"#{IMAGEMAGICK_PATH}\\magick.exe\" \"#{source_file}\" #{shave_and_crop_params} \"#{source_file}_%d.png\""
+	
+	puts "command=#{command}"
+	
+	system command
+	
+	delete_file source_file
+	
+	# TODO: more dynamic garbage removal
+	delete_file "#{source_file}_2.png"
+
+end
+
+def extract_png_from_pdf source_path, target_dir, crop_options
 	puts "Extracting PNG files from #{source_path} ... \n\n"
 	
-	page_index = 1
+	page_index = 0
 	result = true
 	
 	while result == true do
@@ -55,6 +77,11 @@ def extract_png_from_pdf source_path, target_dir
 		puts "### Page #{page_index} - Executing: #{command}"
 		result = system command
 		
+		# TODO: add option
+		if crop_options
+			split_png "#{target_dir}\\png\\page#{page_index}.png"
+		end
+		
 		page_index = page_index + 1
 	end
 		
@@ -63,8 +90,12 @@ end
 def extract_txt_from_png source_path
 
 	puts "Extracting TXT files from #{source_path} ... \n\n"
+	
+	command = "dir \"#{source_path}\\png\\*.png\" /b /s /od"
+	
+	puts "cmd=#{command}"
 		
-	png_files= `dir #{source_path}\\png\\*.png\ /b /s /od`
+	png_files= `#{command}`
 	
 	caps = png_files.scan(/(.*)\n/)
 
@@ -75,7 +106,7 @@ def extract_txt_from_png source_path
 	caps.each do |i|
 	   puts "Value of local variable is #{i}"
 	  
-	  command = "\"#{OCR_TESSERACT_PATH}tesseract.exe\" \"#{i[0]}\" #{source_path}\\txt\\page#{index} -psm 3 --tessdata-dir \"#{OCR_TESSERACT_PATH}tessdata\" -l por \"#{OCR_TESSERACT_PATH}tessdata\\pdf.config"
+	  command = "\"#{OCR_TESSERACT_PATH}tesseract.exe\" \"#{i[0]}\" \"#{source_path}\\txt\\page#{index}\" -psm 3 --tessdata-dir \"#{OCR_TESSERACT_PATH}tessdata\" -l por \"#{OCR_TESSERACT_PATH}tessdata\\pdf.config"
 	  
 	  puts "command=#{command}\n\n"
 	  
@@ -91,8 +122,13 @@ end
 def concat_extracted_txt_files source_path
 
 	puts "Extracting TXT single file from #{source_path} ... \n\n"
+
+	# TODO: refactor-extract method
+	command = "dir \"#{source_path}\\txt\\*.txt\" /b /s /od"
 	
-	txt_files= `dir #{source_path}\\txt\\*.txt\ /b /s /od`
+	puts "cmd=#{command}"
+		
+	txt_files= `#{command}`
 	
 	caps = txt_files.scan(/(.*)\n/)
 
@@ -127,10 +163,15 @@ def concat_extracted_hocr_files source_path
 
 	puts "Extracting hocr single file from #{source_path} ... \n\n"
 	
-	txt_files= `dir #{source_path}\\txt\\*.hocr\ /b /s /od`
+	# TODO: refactor-extract method
+	command = "dir \"#{source_path}\\txt\\*.hocr\" /b /s /od"
+	
+	puts "cmd=#{command}"
+		
+	txt_files= `#{command}`
 	
 	caps = txt_files.scan(/(.*)\n/)
-
+	
 	puts "Found files:\n #{caps} \n\n"
 
 	index = 0
@@ -161,9 +202,16 @@ end
 
 def concat_extracted_pdf_files source_path
 
-	puts "Extracting TXT single file from #{source_path} ... \n\n"
+	puts "Extracting PDF single file from #{source_path} ... \n\n"
 	
-	txt_files= `dir #{source_path}\\txt\\*.pdf\ /b /s /od`
+	# TODO: refactor-extract method
+	command = "dir \"#{source_path}\\txt\\*.pdf\" /b /s /od"
+	
+	puts "cmd=#{command}"
+		
+	txt_files= `#{command}`
+	
+	caps = txt_files.scan(/(.*)\n/)
 	
 	caps = txt_files.scan(/(.*)\n/)
 
@@ -187,14 +235,10 @@ def concat_extracted_pdf_files source_path
 	puts "command=#{command}\n\n"
 	system command
 	
-	
-	
-	#"pdf2txt.dir.PAGE2\txt\page2.pdf pdf2txt.dir.PAGE2\txt\page3.pdf
-	
 end
 
 
-def convert_pdf_2_txt source_path
+def convert_pdf_2_txt source_path, crop_options
 
 	time = Time.now.getutc
 	time2 = time.to_s.delete ': '
@@ -205,7 +249,7 @@ def convert_pdf_2_txt source_path
 
 	create_target_dir target_dir
 
-	extract_png_from_pdf source_path, target_dir
+	extract_png_from_pdf source_path, target_dir, crop_options
 
 	# TODO: apply an optional "demultiplexer" filter to split the page in 2 or more
 	
@@ -220,7 +264,7 @@ def convert_pdf_2_txt source_path
 	
 end
 
-def convert_multiple_pdf_2_txt
+def convert_multiple_pdf_2_txt crop_options
 
 	puts "#### Extracting Multiple PDF files in the current directory  ... \n"
 	puts "#### ... \n\n"
@@ -237,7 +281,7 @@ def convert_multiple_pdf_2_txt
 	caps.each do |i|
 	   puts "Value of local variable is #{i}"
  	  
-	   convert_pdf_2_txt i[0]
+	   convert_pdf_2_txt i[0], crop_options
 	  	  
 	   index = index + 1 
 	end
@@ -249,8 +293,13 @@ end
 OCR_TESSERACT_PATH="D:\\Program Files\\tesseract\\"
 #IMAGEMAGICK_PATH="D:\\Program Files\\ImageMagick-7.0.2-Q16\\"
 GS_PATH="D:\\Program Files (x86)\\gs\\gs9.16\\bin\\"
+
+# Arguments
 SOURCE_PATH=ARGV[0]
+CROP_OPTIONS=ARGV[1]
 TARGET_PATH="G:.\\"
+
+# TODO: add language selection options
 
 time = Time.now.getutc
 time2 = time.to_s.delete ': '
@@ -258,14 +307,11 @@ time2 = time.to_s.delete ': '
 time2 = "#{SOURCE_PATH}"
 TARGET_DIR="#{TARGET_PATH}pdf2txt.dir.#{time2}"
 
-# TODO: correr o magick em blocos (quando são ficheiros muito grandes, encrava)
-
-
 puts "pdf2txt.rb - ..."
 puts "-------------\n\n"
 
 if (SOURCE_PATH == "all")
-	convert_multiple_pdf_2_txt
+	convert_multiple_pdf_2_txt CROP_OPTIONS
 else
-	convert_pdf_2_txt SOURCE_PATH
+	convert_pdf_2_txt SOURCE_PATH, CROP_OPTIONS
 end
