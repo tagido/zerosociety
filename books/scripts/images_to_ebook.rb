@@ -243,6 +243,14 @@ def images_to_multiple_html_files_ebook directory, target_directory, metadata
 	
 end
 
+CALIBRE_PATH="C:\\Program Files\\Calibre2\\"
+def book_convert_EPUB_to_MOBI source, target
+
+	puts "=== Creating .MOBI file (#{target}) ..."
+
+	system "start \"MOBI\" /WAIT \"#{CALIBRE_PATH}ebook-convert\" \"#{source}\" \"#{target}\""
+	
+end
 
 def images_to_EPUB_ebook source_directory, target_directory, metadata
 	images_to_multiple_html_files_ebook source_directory, target_directory, metadata
@@ -250,6 +258,8 @@ def images_to_EPUB_ebook source_directory, target_directory, metadata
 	unzip_archive "#{resources_get_subdir("epub")}\\Template.epub.zip", "ebook"
 	zip_dir_to_archive "ebook", "zeroconverted-#{metadata.title}.epub"
 	epub_check_file "zeroconverted-#{metadata.title}.epub"
+	
+	book_convert_EPUB_to_MOBI "zeroconverted-#{metadata.title}.epub", "zeroconverted-#{metadata.title}.mobi"
 end
 
 
