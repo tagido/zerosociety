@@ -34,9 +34,6 @@ def html_ebook_start metadata
 	string = string + "</head>\n"
 	string = string + "<body>\n"
 	
-	# TODO: encoding, metadata, style, multiple pages
-	# TODO: image metadata
-	
 	return string
 end
 
@@ -77,7 +74,7 @@ def epub_content_opf_start metadata
 	string = string + "  <dc:language>english</dc:language>\n"
 	string = string + "  <dc:identifier opf:scheme=\"calibre\">f07bb25c-ab9d-4252-b23f-4943dd8259c4</dc:identifier>\n"
 	string = string + "  <meta name=\"calibre:timestamp\" content=\"2017-03-05T11:52:27.546000+00:00\"/>\n"
-	# TODO: string = string + "  <meta name=\"cover\" content=\"cover\"/>\n"
+	string = string + "  <meta name=\"cover\" content=\"cover\"/>\n"
 	string = string + "  <meta name=\"calibre:title_sort\" content=\"#{metadata.author}\"/>\n"
 	string = string + "</metadata>\n"
 	string = string + "<manifest>\n"
@@ -108,7 +105,7 @@ end
 def epub_content_opf_end first_page
 	string = "</spine>\n"
 	string = string + "<guide>\n"
-	string = string + "   <reference href=\"toc.xhtml\" title=\"Cover\" type=\"cover\"/>\n"
+	string = string + "   <reference href=\"titlepage.xhtml\" title=\"Cover\" type=\"cover\"/>"
 	string = string + "   <reference type=\"toc\" title=\"Table of Contents\" href=\"toc.xhtml\"/>\n"
 	string = string + "   <reference type=\"text\" title=\"Text\" href=\"#{first_page}\"/>\n"
 	string = string + "</guide>\n"
@@ -203,12 +200,13 @@ def images_to_multiple_html_files_ebook directory, target_directory, metadata
 		index_file_html_string = index_file_html_string + html_ebook_add_link("#{image_name}.xhtml", image_name)
 		
 		content_opf_file_string = content_opf_file_string + epub_content_opf_add_manifest_link("#{image_name}.xhtml", "id#{image_no}", "application/xhtml+xml")
-		# TODO: determine image mimetype from file extension jpg => "image/jpeg" , png => "image/png"
-		content_opf_file_string = content_opf_file_string + epub_content_opf_add_manifest_link(image_name, "idimg#{image_no}", "image/jpeg")		
+		content_opf_file_string = content_opf_file_string + epub_content_opf_add_manifest_link(image_name, "idimg#{image_no}", get_mime_type_from_extension(image_name) )
 		content_opf_spine_string = content_opf_spine_string + epub_content_opf_add_spine_link("id#{image_no}")
 	   
 		if image_no == 1
 			first_page_filename = "#{image_name}.xhtml"
+			#copy_and_rename_file_to_target_dir "#{image_name}", "cover.jpeg", target_directory
+			image_convert "#{image_name}", "#{target_directory}\\cover.jpeg"
 		end
 	   
 		target_filename = "#{target_directory}\\#{image_name}.xhtml"
@@ -223,10 +221,13 @@ def images_to_multiple_html_files_ebook directory, target_directory, metadata
 		}
 	end
 
+	content_opf_file_string = content_opf_file_string + epub_content_opf_add_manifest_link("titlepage.xhtml", "titlepage", "application/xhtml+xml")
 	content_opf_file_string = content_opf_file_string + epub_content_opf_add_manifest_link("toc.xhtml", "idtoc", "application/xhtml+xml")
 	content_opf_file_string = content_opf_file_string + epub_content_opf_add_manifest_link("toc.ncx", "ncx", "application/x-dtbncx+xml")
+	content_opf_file_string = content_opf_file_string + epub_content_opf_add_manifest_link("cover.jpeg", "cover", "image/jpeg")
 
 	content_opf_file_string = content_opf_file_string + epub_content_opf_end_manifest_start_spine 
+	content_opf_file_string = content_opf_file_string + epub_content_opf_add_spine_link("titlepage")
 	content_opf_file_string = content_opf_file_string + epub_content_opf_add_spine_link("idtoc") + content_opf_spine_string
 	
 	content_opf_file_string = content_opf_file_string + epub_content_opf_end(first_page_filename)
@@ -242,6 +243,17 @@ def images_to_multiple_html_files_ebook directory, target_directory, metadata
 	
 end
 
+
+def images_to_EPUB_ebook source_directory, target_directory, metadata
+	images_to_multiple_html_files_ebook source_directory, target_directory, metadata
+	resources_init __FILE__
+	unzip_archive "#{resources_get_subdir("epub")}\\Template.epub.zip", "ebook"
+	zip_dir_to_archive "ebook", "zeroconverted-#{metadata.title}.epub"
+	epub_check_file "zeroconverted-#{metadata.title}.epub"
+end
+
+
+
 # TODO: automate dependencies and directories (currently hardcoded)
 
 EPUBCHECK_PATH="d:\\Downloads\\epubcheck-3.0.1\\epubcheck-3.0.1\\"
@@ -256,8 +268,6 @@ puts "images_to_ebook.rb - Converts a set of images to ebooks"
 puts "-------------\n\n"
 
 # TODO: optionally get metadata from the command line
-# TODO: get book file name from command-line
-# TODO: use the first image as the book cover
 
 metadata = OpenStruct.new
 
@@ -270,14 +280,9 @@ metadata.author = "Desconhecido"
 
 images_to_html_ebook ".", "index.html", metadata
 
-# TODO: a method with these steps
-images_to_multiple_html_files_ebook ".", "ebook", metadata
-resources_init __FILE__
-unzip_archive "#{resources_get_subdir("epub")}\\Template.epub.zip", "ebook"
-zip_dir_to_archive "ebook", "zeroconverted-#{metadata.title}.epub"
+# TODO: move some of the EPUB methods to a library
 
-epub_check_file "zeroconverted-#{metadata.title}.epub"
-
+images_to_EPUB_ebook ".", "ebook", metadata
 
 
 # TODO: option to split images in 2 + remove some whitespace at the margins (for printed PPTs)

@@ -207,10 +207,15 @@ def convert_pdf_2_txt source_path
 
 	extract_png_from_pdf source_path, target_dir
 
+	# TODO: apply an optional "demultiplexer" filter to split the page in 2 or more
+	
 	extract_txt_from_png target_dir
 
 	concat_extracted_txt_files target_dir
+	
+	# TODO: build an EPUB with the extracted HOCR files
 	concat_extracted_hocr_files target_dir
+	
 	#concat_extracted_pdf_files TARGET_DIR	
 	
 end
@@ -242,7 +247,7 @@ end
 
 # TODO: automate dependencies (currently hardcoded)
 OCR_TESSERACT_PATH="D:\\Program Files\\tesseract\\"
-IMAGEMAGICK_PATH="D:\\Program Files\\ImageMagick-7.0.2-Q16\\"
+#IMAGEMAGICK_PATH="D:\\Program Files\\ImageMagick-7.0.2-Q16\\"
 GS_PATH="D:\\Program Files (x86)\\gs\\gs9.16\\bin\\"
 SOURCE_PATH=ARGV[0]
 TARGET_PATH="G:.\\"
