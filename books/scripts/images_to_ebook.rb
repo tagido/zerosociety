@@ -53,9 +53,23 @@ def html_ebook_add_image image_name
 end
 
 def html_ebook_add_link file_name, description
+
+	puts "html_ebook_add_link: #{file_name} \n"
+
 	string = "<p><a class=\"index\" href=\"#{file_name}\">#{description}</a></p>\n"
 	
 	return string
+end
+
+def html_ebook_add_item item_name
+
+	item_mimetype = get_mime_type_from_extension item_name
+
+	if ( (item_mimetype == "text/html") or (item_mimetype == "application/xhtml+xml") )
+		html_ebook_add_link item_name, item_name
+	else
+		html_ebook_add_image item_name
+	end
 end
 
 def epub_content_opf_start metadata
@@ -83,6 +97,9 @@ def epub_content_opf_start metadata
 end
 
 def epub_content_opf_add_manifest_link file_name, id, media_type
+
+	#puts "epub_content_opf_add_manifest_link >> #{file_name} #{id} #{media_type}\n"
+
 	string = "   <item href=\"#{file_name}\" id=\"#{id}\" media-type=\"#{media_type}\"/>\n"
 	return string
 end
@@ -152,7 +169,7 @@ def images_to_html_ebook directory, target_filename, metadata
 end
 
 
-def images_to_multiple_html_files_ebook directory, target_directory, metadata
+def images_to_multiple_html_files_ebook directory, target_directory, metadata, include_html_files
 
 	if (metadata.nil?)
 		metadata = OpenStruct.new
@@ -163,6 +180,12 @@ def images_to_multiple_html_files_ebook directory, target_directory, metadata
 	image_files = `dir #{directory}\\*.jpg\ /od /b` 
 	image_files = image_files + `dir #{directory}\\*.png\ /od /b` 
 
+	if (include_html_files)
+		image_files = image_files + `dir #{directory}\\*.xhtml\ /od /b` 
+		image_files = image_files + `dir #{directory}\\*.html\ /od /b` 
+		image_files = image_files + `dir #{directory}\\*.htm\ /od /b` 
+	end
+	
 	create_dir target_directory
 	
 	#system "mkdir #{directory}\\ebook"
@@ -187,7 +210,7 @@ def images_to_multiple_html_files_ebook directory, target_directory, metadata
 	   image_name = caps[image_no-1][0] + "." + caps[image_no-1][1] 
 	   #puts "Value of local variable is #{image_no} .. #{image_name}"
    
-	    html_string = html_string + html_ebook_add_image(image_name)
+	    html_string = html_string + html_ebook_add_item(image_name)
 	   
 	    html_string = html_string + html_ebook_end
 	   
@@ -196,29 +219,47 @@ def images_to_multiple_html_files_ebook directory, target_directory, metadata
 		
 		# Indexes
 
-		# TODO: option to use numbers instead of the file names as index entries
-		index_file_html_string = index_file_html_string + html_ebook_add_link("#{image_name}.xhtml", image_name)
+		item_mimetype = get_mime_type_from_extension image_name
 		
-		content_opf_file_string = content_opf_file_string + epub_content_opf_add_manifest_link("#{image_name}.xhtml", "id#{image_no}", "application/xhtml+xml")
-		content_opf_file_string = content_opf_file_string + epub_content_opf_add_manifest_link(image_name, "idimg#{image_no}", get_mime_type_from_extension(image_name) )
-		content_opf_spine_string = content_opf_spine_string + epub_content_opf_add_spine_link("id#{image_no}")
-	   
-		if image_no == 1
-			first_page_filename = "#{image_name}.xhtml"
-			#copy_and_rename_file_to_target_dir "#{image_name}", "cover.jpeg", target_directory
-			image_convert "#{image_name}", "#{target_directory}\\cover.jpeg"
+		# TODO: option to use numbers instead of the file names as index entries
+		if !( (item_mimetype == "text/html") or (item_mimetype == "application/xhtml+xml") )
+			# Images
+			index_file_html_string = index_file_html_string + html_ebook_add_link("#{image_name}.xhtml", image_name)
+			content_opf_file_string = content_opf_file_string + epub_content_opf_add_manifest_link("#{image_name}.xhtml", "id#{image_no}", "application/xhtml+xml")
+			content_opf_spine_string = content_opf_spine_string + epub_content_opf_add_spine_link("id#{image_no}")
+		else
+			# XHTML
+			index_file_html_string = index_file_html_string + html_ebook_add_item(image_name)
+			content_opf_spine_string = content_opf_spine_string + epub_content_opf_add_spine_link("idimg#{image_no}")
 		end
+		
+		
+		content_opf_file_string = content_opf_file_string + epub_content_opf_add_manifest_link(image_name, "idimg#{image_no}", get_mime_type_from_extension(image_name) )
 	   
-		target_filename = "#{target_directory}\\#{image_name}.xhtml"
+
+	   	
+		# write an xhtml file for each image, skip for other item types
+		if !( (item_mimetype == "text/html") or (item_mimetype == "application/xhtml+xml") )
+
+			if image_no == 1
+				first_page_filename = "#{image_name}.xhtml"
+				#copy_and_rename_file_to_target_dir "#{image_name}", "cover.jpeg", target_directory
+				image_convert "#{image_name}", "#{target_directory}\\cover.jpeg"
+			end
+		
+			target_filename = "#{target_directory}\\#{image_name}.xhtml"
+			
+	
+			#puts "page html:\n"
+			#puts "-------------\n\n"
+			#puts "#{html_string}\n"
+	
+			File.open(target_filename, 'w') { 
+				|file| file.write(html_string)
+			}
+		end
+		
 		image_no = image_no + 1
-	
-		#puts "page html:\n"
-		#puts "-------------\n\n"
-		#puts "#{html_string}\n"
-	
-		File.open(target_filename, 'w') { 
-			|file| file.write(html_string)
-		}
 	end
 
 	content_opf_file_string = content_opf_file_string + epub_content_opf_add_manifest_link("titlepage.xhtml", "titlepage", "application/xhtml+xml")
@@ -271,7 +312,7 @@ end
 
 
 def images_to_EPUB_ebook source_directory, target_directory, metadata
-	images_to_multiple_html_files_ebook source_directory, target_directory, metadata
+	images_to_multiple_html_files_ebook source_directory, target_directory, metadata, true
 	resources_init __FILE__
 	unzip_archive "#{resources_get_subdir("epub")}\\Template.epub.zip", "ebook"
 	zip_dir_to_archive "ebook", "zeroconverted-#{metadata.title}.epub"
@@ -289,7 +330,9 @@ EPUBCHECK_PATH="d:\\Downloads\\epubcheck-3.0.1\\epubcheck-3.0.1\\"
 
 # checks for errors in the epub file
 def epub_check_file epub_file
-	system "java -jar #{EPUBCHECK_PATH}\\epubcheck-3.0.1.jar \"#{epub_file}\""
+	result = system "java -jar #{EPUBCHECK_PATH}\\epubcheck-3.0.1.jar \"#{epub_file}\" 2> \"#{epub_file}.errors.log\""
+	
+	return result
 end
 
 
@@ -307,7 +350,7 @@ else
 end
 metadata.author = "Desconhecido"
 
-images_to_html_ebook ".", "index.html", metadata
+#images_to_html_ebook ".", "book_index.html", metadata
 
 # TODO: move some of the EPUB methods to a library
 

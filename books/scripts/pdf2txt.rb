@@ -48,8 +48,8 @@ def split_png source_file
 
 #\magick.exe" page?.png -shave 14%x10% -crop 100%x44% page1_%d.png
 
-	#shave_and_crop_params = "-shave 14%x10% -crop 100%x44%"
-	shave_and_crop_params = "-shave 21%x12% -crop 100%x50%"
+	shave_and_crop_params = "-shave 14%x10% -crop 100%x44%"
+	#shave_and_crop_params = "-shave 21%x12% -crop 100%x50%"
 
  	command = "\"#{IMAGEMAGICK_PATH}\\magick.exe\" \"#{source_file}\" #{shave_and_crop_params} \"#{source_file}_%d.png\""
 	
@@ -252,7 +252,7 @@ def convert_pdf_2_txt source_path, crop_options
 
 	extract_png_from_pdf source_path, target_dir, crop_options
 	
-	#extract_txt_from_png target_dir
+	extract_txt_from_png target_dir
 
 	concat_extracted_txt_files target_dir
 	

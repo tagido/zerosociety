@@ -88,6 +88,8 @@ end
 
 def kindle_write_mind_map book_title, groupped_entries, target_dir
 
+# TODO: refactor mind-map support to library
+
 	target_file2 = sanitize_filename(book_title) + ".mm"
 
 	target_file = "#{target_dir}\\Kindle notes for #{target_file2}"
@@ -299,3 +301,5 @@ print "mkdir \"#{TARGET_PATH}\"\n"
 system "mkdir \"#{TARGET_PATH}\""
 
 kindle_convert_TXT_2_XML entries, TARGET_PATH
+
+# TODO: add conversion to PPTX
