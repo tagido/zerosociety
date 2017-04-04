@@ -104,10 +104,13 @@ def extract_txt_from_png source_path
 
 	index = 0
 	
+	#LANGUAGE="por"
+	language="eng"
+	
 	caps.each do |i|
 	   puts "Value of local variable is #{i}"
 	  
-	  command = "\"#{OCR_TESSERACT_PATH}tesseract.exe\" \"#{i[0]}\" \"#{source_path}\\txt\\page#{index}\" -psm 3 --tessdata-dir \"#{OCR_TESSERACT_PATH}tessdata\" -l por \"#{OCR_TESSERACT_PATH}tessdata\\pdf.config"
+	  command = "\"#{OCR_TESSERACT_PATH}tesseract.exe\" \"#{i[0]}\" \"#{source_path}\\txt\\page#{index}\" -psm 3 --tessdata-dir \"#{OCR_TESSERACT_PATH}tessdata\" -l #{language} \"#{OCR_TESSERACT_PATH}tessdata\\pdf.config"
 	  
 	  puts "command=#{command}\n\n"
 	  

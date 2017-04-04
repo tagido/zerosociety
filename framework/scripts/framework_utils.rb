@@ -687,6 +687,25 @@ def image_convert source_filename, target_filename
 	
 end
 
+def image_crop source_filename, target_filename, startx, starty, endx, endy
+
+	print "Converting  \"#{source_filename}\" to \"#{target_filename}\"  \n\n"
+
+	# Let image magick figure out the conversion by looking at the extensions
+	
+	height = endy.to_i - starty.to_i
+	witdh = endx.to_i - startx.to_i
+	
+
+	command = "\"#{IMAGEMAGICK_PATH}\\magick.exe\" \"#{source_filename}\" -crop #{witdh}x#{height}+#{startx}+#{starty} \"#{target_filename}\""
+	
+	puts command+"\n"
+	
+	system command
+
+end
+
+
 #
 # Files and directories
 #

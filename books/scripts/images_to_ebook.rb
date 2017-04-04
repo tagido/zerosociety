@@ -45,9 +45,10 @@ end
 
 def html_ebook_add_image image_name
 	string = "<p><img class=\"video_frame\" alt=\"#{image_name}\" src=\"#{image_name}\"></img></p>\n"
-	# string = string + "<p class=\"video_frame_caption\">#{image_name}</p>\n"
+#	 string = string + "<p class=\"video_frame_caption\">#{image_name}</p>\n"
 	
 	# TODO: no caption
+	# TODO: or date and time
 	
 	return string
 end
@@ -232,11 +233,8 @@ def images_to_multiple_html_files_ebook directory, target_directory, metadata, i
 			index_file_html_string = index_file_html_string + html_ebook_add_item(image_name)
 			content_opf_spine_string = content_opf_spine_string + epub_content_opf_add_spine_link("idimg#{image_no}")
 		end
-		
-		
-		content_opf_file_string = content_opf_file_string + epub_content_opf_add_manifest_link(image_name, "idimg#{image_no}", get_mime_type_from_extension(image_name) )
-	   
-
+			
+		content_opf_file_string = content_opf_file_string + epub_content_opf_add_manifest_link(image_name, "idimg#{image_no}", get_mime_type_from_extension(image_name) )	   
 	   	
 		# write an xhtml file for each image, skip for other item types
 		if !( (item_mimetype == "text/html") or (item_mimetype == "application/xhtml+xml") )
@@ -357,3 +355,4 @@ metadata.author = "Desconhecido"
 images_to_EPUB_ebook ".", "ebook", metadata
 
 # TODO: option to preview the generated ebooks
+# TODO: conversion to PPTX and MP4
