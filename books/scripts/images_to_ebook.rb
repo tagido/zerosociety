@@ -354,5 +354,7 @@ metadata.author = "Desconhecido"
 
 images_to_EPUB_ebook ".", "ebook", metadata
 
+# TODO: add option to group images in the same page (by prefix)
+# TODO: remove tmp files
 # TODO: option to preview the generated ebooks
 # TODO: conversion to PPTX and MP4

@@ -101,6 +101,7 @@ end
 
 #TODO: break long vertical images in two halves
 #TODO: try to discard very "thin" images (lines (?)) or join with other images
+#TODO: display stats over converted images (aspect-ratio, ...)
 #TODO: move code to library
 #TODO: create a "paper_to_mobi" script
 

@@ -24,7 +24,6 @@
 require_relative "../../framework/scripts/framework_utils.rb"
 
 
-
 def get_mp3_duration file
 
 	file_info = `\"#{FFMPEG_PATH}ffmpeg.exe\" -i \"#{file}\" 2>&1`
@@ -43,7 +42,8 @@ FFMPEG_PATH="D:\\Program Files (x86)\\FFmpeg for Audacity\\"
 EAC3TO_PATH="D:\\Program Files (x86)\\eac3to331\\"
 TARGET_PATH=".\\"
 #IMAGE_PATH="\"d:\\Mais imagens\\Cartazes\\DJ Estaline\\Caixode do lixo.jpg\""
-IMAGE_PATH=".\\Mito_Duplo_Radio_Full_HD_v2.jpg"
+IMAGE_PATH="\"d:\\Mais imagens\\Cartazes\\DJ Estaline\\botastexas.jpg\""
+#IMAGE_PATH=".\\Mito_Duplo_Radio_Full_HD_v2.jpg"
 MP3_PATH = ARGV[0]
 
 puts "mp3_to_mp4.rb - Creates an mp4 video with the given mp3 audio file and an image"
@@ -62,8 +62,8 @@ if MP3_PATH
 	puts "MP3 duration=#{mp3_duration}"
 
     puts "Converting...\n\n"	
-	
-	system "\"#{FFMPEG_PATH}ffmpeg.exe\" -loop 1 -i #{IMAGE_PATH} -i \"#{MP3_PATH}\" -t #{mp3_duration} -pix_fmt yuv420p \"#{MP4_PATH}\""
+	# -pix_fmt yuv420p 
+	system "\"#{FFMPEG_PATH}ffmpeg.exe\" -loop 1 -i #{IMAGE_PATH} -i \"#{MP3_PATH}\" -t #{mp3_duration} \"#{MP4_PATH}\""
 else
 
 	puts "Invalid args"
