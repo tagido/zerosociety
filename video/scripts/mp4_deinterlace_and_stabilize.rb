@@ -41,6 +41,12 @@ def convert_chapter input_file_name,file_index, target_path
 	target_yaddif_filename="#{target_path}\\#{File.basename(input_file_name)}.yadif.mpg"
 	target_stabilized_filename="#{target_path}\\#{File.basename(input_file_name)}.yadif.deshaker.mpg"
    
+   target_tv_system="pal-dvd"
+   #target_tv_system="ntsc-dvd"
+   
+   target_aspect_ratio="16:9"
+   #target_aspect_ratio="4:3"
+   
    metadata = "-metadata title=\"Track #{file_index}\" -metadata artist=\"Pedro\" -metadata genre=\"#{genre}\" -metadata date=\"#{date}\" -metadata album=\"#{album}\" -metadata track=\"#{file_index}\""
    
    filter="-vf \"yadif=1:-1:0\""
@@ -50,13 +56,15 @@ def convert_chapter input_file_name,file_index, target_path
    #filter="-vf \"bwdif\" -vf eq=1.2:0:1.6:1:1:1:1:1"
 
    #Deinterlace to 50 fps -aspect 16:9
-   system "\"#{FFMPEG_PATH}ffmpeg\" #{FFMPEG_HDACCEL} -i \"#{input_file_name}\" -aspect 16:9 #{filter} -c:v mpeg2video -b:v 6000k -target pal-dvd #{metadata}  \"#{target_yaddif_filename}\""
+   system "\"#{FFMPEG_PATH}ffmpeg\" #{FFMPEG_HDACCEL} -i \"#{input_file_name}\" -aspect #{target_aspect_ratio} #{filter} -c:v mpeg2video -b:v 6000k -target #{target_tv_system} #{metadata}  \"#{target_yaddif_filename}\""
 
+   return
+   
    #Get motion vectors
    system "\"#{FFMPEG_PATH}ffmpeg\" #{FFMPEG_HDACCEL} -i \"#{target_yaddif_filename}\" -vf \"vidstabdetect=stepsize=6:shakiness=8:accuracy=9:result=transform_vectors2.trf\" -f null -"
 
    #Stabilize using the motion vectors     
-   system "\"#{FFMPEG_PATH}ffmpeg\" #{FFMPEG_HDACCEL} -i \"#{target_yaddif_filename}\" -vf \"vidstabtransform=input=transform_vectors2.trf:zoom=1:smoothing=30,unsharp=5:5:0.8:3:3:0.4, fps=25\" -c:v mpeg2video -b:v 8000k -target pal-dvd -acodec copy #{metadata} \"#{target_stabilized_filename}\""
+   system "\"#{FFMPEG_PATH}ffmpeg\" #{FFMPEG_HDACCEL} -i \"#{target_yaddif_filename}\" -vf \"vidstabtransform=input=transform_vectors2.trf:zoom=1:smoothing=30,unsharp=5:5:0.8:3:3:0.4, fps=25\" -c:v mpeg2video -b:v 8000k -target #{target_tv_system} -acodec copy #{metadata} \"#{target_stabilized_filename}\""
 end
 
 
@@ -66,7 +74,8 @@ def check_mp4_files directory, target_path
 	puts "-------------\n\n"
 
 	video_files= `dir #{directory}\\*.mp4 /b /s`
-
+	video_files= video_files + `dir #{directory}\\*.mpg /b /s`
+	
 	caps = video_files.scan(/(.*)\n/)
 
 	puts "Found files:\n #{caps} \n\n"

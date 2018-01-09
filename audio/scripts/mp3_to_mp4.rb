@@ -42,8 +42,10 @@ FFMPEG_PATH="D:\\Program Files (x86)\\FFmpeg for Audacity\\"
 EAC3TO_PATH="D:\\Program Files (x86)\\eac3to331\\"
 TARGET_PATH=".\\"
 #IMAGE_PATH="\"d:\\Mais imagens\\Cartazes\\DJ Estaline\\Caixode do lixo.jpg\""
-IMAGE_PATH="\"d:\\Mais imagens\\Cartazes\\DJ Estaline\\botastexas.jpg\""
+#IMAGE_PATH="\"d:\\Mais imagens\\Cartazes\\DJ Estaline\\botastexas.jpg\""
 #IMAGE_PATH=".\\Mito_Duplo_Radio_Full_HD_v2.jpg"
+IMAGE_PATH="\"G:\\Downloads\\Israel\\MArina.jpg\""
+
 MP3_PATH = ARGV[0]
 
 puts "mp3_to_mp4.rb - Creates an mp4 video with the given mp3 audio file and an image"

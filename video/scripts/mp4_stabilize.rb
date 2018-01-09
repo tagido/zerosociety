@@ -46,10 +46,10 @@ def convert_chapter input_file_name,file_index, target_path
    metadata = "-metadata title=\"Track #{file_index}\" -metadata artist=\"Pedro\" -metadata genre=\"#{genre}\" -metadata date=\"#{date}\" -metadata album=\"#{album}\" -metadata track=\"#{file_index}\""
    
    #Get motion vectors
-   #system "\"#{FFMPEG_PATH}ffmpeg\" #{FFMPEG_HDACCEL} -i \"#{input_file_name}\" -aspect #{aspect} -vf \"vidstabdetect=stepsize=6:shakiness=8:accuracy=9:result=transform_vectors2.trf\" -f null -"
+   system "\"#{FFMPEG_PATH}ffmpeg\" #{FFMPEG_HDACCEL} -i \"#{input_file_name}\" -aspect #{aspect} -vf \"vidstabdetect=stepsize=6:shakiness=10:accuracy=9:result=transform_vectors2.trf\" -f null -"
 
    #Stabilize using the motion vectors     
-   system "\"#{FFMPEG_PATH}ffmpeg\" #{FFMPEG_HDACCEL} -i \"#{input_file_name}\" -aspect #{aspect} -vf \"vidstabtransform=input=transform_vectors2.trf:zoom=1:tripod=1,unsharp=5:5:0.8:3:3:0.4, fps=25\" -c:v mpeg2video -b:v 8000k -target ntsc-dvd #{metadata} \"#{target_stabilized_filename}\""
+   system "\"#{FFMPEG_PATH}ffmpeg\" #{FFMPEG_HDACCEL} -i \"#{input_file_name}\" -aspect #{aspect} -vf \"vidstabtransform=input=transform_vectors2.trf:zoom=1,unsharp=5:5:0.8:3:3:0.4, fps=25\" -c:v mpeg2video -b:v 8000k -target ntsc-dvd #{metadata} \"#{target_stabilized_filename}\" \"#{target_stabilized_filename}.srt\""
 end
 
 

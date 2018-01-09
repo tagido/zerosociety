@@ -45,6 +45,30 @@ def book_convert_PPTX_to_PDF source, target
 	
 end
 
+def check_pptx_file pptx_filename
+		puts "=== Checking .PPTX file (#{pptx_filename}) ..."
+		system "cmd /C dir \"#{pptx_filename}\""
+		puts "=== Opening .PPTX file (#{pptx_filename}) ..."
+		system "start \"PDF\" /WAIT \"#{pptx_filename}\""
+end
+
+#	@deck.add_pictorial_slide title, image_path, coords
+#
+# TODO: adjust target size based on the image sizes/aspect ration/orientation
+# TODO: reduzir resolucao se for muito grande
+def convert_image_to_pptx_slide deck, image_path, metadata
+
+	aux_x= 12700 * (1)
+	aux_cx = 12700 * 712
+	aux_y= 12700 * 1
+	aux_cy= 12700 * 512
+
+	print "... Adding slide with #{image_path}\n"
+	
+	coords = {x: aux_x, y: aux_y, cx: aux_cx, cy: aux_cy}
+	deck.add_pictorial_slide image_path, image_path, coords
+end		
+
 
 def images_to_pptx_ebook source_directory, target_directory, metadata
 		
@@ -54,7 +78,7 @@ def images_to_pptx_ebook source_directory, target_directory, metadata
 	@deck = Powerpoint::Presentation.new
 
 	# Creating an introduction slide:
-	subtitle = 'An automatically generated Powerpoint '
+	subtitle = 'generated with ZeroSociety'
 	title = metadata.title
 	@deck.add_intro title, subtitle
 
@@ -63,7 +87,7 @@ def images_to_pptx_ebook source_directory, target_directory, metadata
 	# Content must be an array of strings that will be displayed as bullet items.
 	title = metadata.title
 	content = ['Its cool!', 'Its light.']
-	@deck.add_textual_slide title, content
+	#@deck.add_textual_slide title, content
 
 	# Creating an image Slide:
 	# It will contain a title as string.
@@ -77,12 +101,6 @@ def images_to_pptx_ebook source_directory, target_directory, metadata
 	# cx and cy define the width and height of the image.
 	# x, y, cx, cy are in points. Each pixel is 12700 points.
 	# coordinates parameter is optional.
-
-	aux_x= 12700 * (1)
-	aux_cx = 12700 * 712
-	aux_y= 12700 * 1
-	aux_cy= 12700 * 512
-
 
 	#coords = {x: aux_x, y: aux_y, cx: aux_cx, cy: aux_cy}
 	#@deck.add_pictorial_slide title, image_path, coords
@@ -98,16 +116,26 @@ def images_to_pptx_ebook source_directory, target_directory, metadata
 
 	caps.each do |i|
 	
-		coords = {x: aux_x, y: aux_y, cx: aux_cx, cy: aux_cy}
-		@deck.add_pictorial_slide i[0], i[0]+"."+i[1], coords
+		#coords = {x: aux_x, y: aux_y, cx: aux_cx, cy: aux_cy}
+		#@deck.add_pictorial_slide i[0], i[0]+"."+i[1], coords
+		
+		convert_image_to_pptx_slide @deck,  i[0]+"."+i[1], metadata
+		
 	end
+	
+	title = 'Generated with Zero Society tools'
+	content = ['github:', 'tagido/zerosociety']
+	@deck.add_textual_slide title, content
 	
 	# Saving the pptx file to the current directory.
 	pptx_filename = target_directory + "\\converted.pptx"
+	puts "=== Saving .PPTX file (#{pptx_filename}) ...\n"
 	@deck.save(pptx_filename)
 	
 	#pdf_filename = target_directory + "\\converted.pdf"
 	#book_convert_PPTX_to_PDF pptx_filename, pdf_filename
+	
+	check_pptx_file pptx_filename
 end
 
 

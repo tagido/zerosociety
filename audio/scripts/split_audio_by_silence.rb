@@ -1,4 +1,4 @@
-#
+﻿#
 #   split_audio_by_silence.rb
 #   =========================
 #   Splits an audio file by searching for silence intervals
@@ -57,15 +57,15 @@ FFMPEG_PATH="D:\\Program Files (x86)\\FFmpeg for Audacity\\"
 EAC3TO_PATH="D:\\Program Files (x86)\\eac3to331\\"
 TARGET_PATH="G:.\\"
 TARGET_FILENAME=ARGV[0]
-#TARGET_FORMAT="mp3"
-TARGET_FORMAT="flac"
+TARGET_FORMAT="mp3"
+#TARGET_FORMAT="flac"
 SILENCE_FILENAME="#{TARGET_FILENAME}.silence.txt"
 
-#NOISE_TOLERANCE="-30dB"
-#SILENCE_MINIMUM_INTERVAL="2"
+NOISE_TOLERANCE="-30dB"
+SILENCE_MINIMUM_INTERVAL="2"
 
-NOISE_TOLERANCE="-8dB"
-SILENCE_MINIMUM_INTERVAL="4"
+#NOISE_TOLERANCE="-8dB"
+#SILENCE_MINIMUM_INTERVAL="4"
 
 REUSE_PREVIOUS_SILENCE_FILE=false
 

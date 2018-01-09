@@ -724,7 +724,7 @@ end
 
 def copy_and_rename_file_to_target_dir file, new_name, target_dir
 	print "Copying and renaming file: #{file} to \"#{target_dir}\"\\#{new_name}  \n\n"
-	system "xcopy #{file} \"#{target_dir}\"\\#{new_name}"
+	system "xcopy \"#{file}\" \"#{target_dir}\"\\#{new_name}"
 end
 
 def delete_file target_archive
@@ -784,4 +784,21 @@ def zip_dir_to_archive source_dir, target_archive
 	system "ren \".\\#{source_dir}\\!mimetype\" mimetype"
 	
 	return result
+end
+
+
+#
+# Video utils
+#
+FFMPEG_DEFAULT_PATH="D:\\Program Files\\ffmpeg-20180102\\bin\\"
+
+def call_ffmpeg_raw cmd_options, preview
+   conv_command = "\"#{FFMPEG_DEFAULT_PATH}ffmpeg.exe\"  #{cmd_options} "
+
+   puts "#{conv_command}\n"
+   puts "Running FFMPEG conversion...\n"
+   
+   if (!preview)
+	system "#{conv_command}\n"
+   end
 end
