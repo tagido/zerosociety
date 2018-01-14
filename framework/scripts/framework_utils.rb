@@ -675,6 +675,14 @@ end
 
 IMAGEMAGICK_PATH="D:\\Program Files\\ImageMagick-7.0.2-Q16\\"
 
+def call_ImageMagick_raw command_args
+	command = "\"#{IMAGEMAGICK_PATH}\\magick.exe\" #{command_args}" 
+	
+	puts command+"\n"
+	
+	system command
+end
+
 def image_convert source_filename, target_filename
 
 	print "Converting  \"#{source_filename}\" to \"#{target_filename}\"  \n\n"
@@ -705,6 +713,48 @@ def image_crop source_filename, target_filename, startx, starty, endx, endy
 
 end
 
+def image_add_text source_filename, target_filename, text
+
+	print "Converting  \"#{source_filename}\" to \"#{target_filename}\"  \n\n"
+
+	# Let image magick figure out the conversion by looking at the extensions
+
+	#call_ImageMagick_raw " \"#{source_filename}\" -undercolor #00000080 -font Candice -pointsize 72 -fill Navy -gravity east  -size 320x -stroke #000C -strokewidth 2 -annotate 0 caption:\"#{text}\" -stroke  none -fill white  -annotate 0 \"#{text}\" \"#{target_filename}\""
+	
+	font_size = "172" 
+	caption_box_size = "1020x1640"
+	
+	call_ImageMagick_raw " \"#{source_filename}\" ( -background none -undercolor #00000080  -fill white  -font Corsiva -pointsize #{font_size} -gravity east -size #{caption_box_size} caption:\"#{text}\" ) -compose over -composite \"#{target_filename}\""
+
+
+end
+
+
+#
+# OCR
+#
+OCR_TESSERACT_PATH="D:\\Program Files\\tesseract\\"
+
+def call_Tessearct_raw command_args
+	command = "\"#{OCR_TESSERACT_PATH}tesseract.exe\" #{command_args}" 
+	
+	puts command+"\n"
+	
+	system command
+end
+
+def OCR_extract_txt_from_png source_file
+
+	puts "Extracting TXT files from #{source_file} ... \n\n"
+	
+	language="por"
+	#language="eng"
+	
+	target_file = source_file + ".ocr.txt"
+	  
+	call_Tessearct_raw "\"#{source_file}\" \"#{target_file}\" -psm 3 --tessdata-dir \"#{OCR_TESSERACT_PATH}tessdata\" -l #{language} \"#{OCR_TESSERACT_PATH}tessdata\\pdf.config"
+	  
+end
 
 #
 # Files and directories
@@ -769,7 +819,6 @@ def zip_dir_to_archive source_dir, target_archive
 	#system "del #{target_archive} /Q"
 	
 	delete_file target_archive
-	
 
 	# Workaround for EPUB as described in https://sourceforge.net/p/sevenzip/feature-requests/1212/
 	
