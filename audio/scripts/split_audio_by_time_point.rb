@@ -30,7 +30,7 @@ require_relative "../../framework/scripts/framework_utils.rb"
 def convert_chapter start_time,end_time,file_index, track_name, preview
 
 
-   if TARGET_FORMAT.eql? "mp3"
+   if (TARGET_FORMAT.eql? "mp3" and SOURCE_FORMAT.eql? "mp3")
 		#codec_options = "-codec:a libmp3lame -qscale:a 2"
 		codec_options="-c:a copy"
    else
@@ -54,6 +54,21 @@ end
 FFMPEG_PATH="D:\\Program Files\\ffmpeg-20180102\\bin\\"
 TARGET_FILENAME=ARGV[0]
 SPLIT_POINT=ARGV[1]
+
+
+skip_option=ARGV[2]
+skipfirst=false
+skipsecond=false
+
+if skip_option.eql? "skipfirst"
+skipfirst=true
+end
+if skip_option.eql? "skipsecond"
+skipsecond=true
+end
+
+SOURCE_FORMAT="mp4"
+
 TARGET_FORMAT="mp3"
 #TARGET_FORMAT="flac"
 
@@ -70,7 +85,11 @@ puts "Splitting...\n\n"
 
 track_name_in = TARGET_FILENAME
    
+if (!skipfirst)
 convert_chapter "00:00:00"  , SPLIT_POINT , 1, track_name_in+".point.split.1.mp3", PREVIEW
-convert_chapter SPLIT_POINT , "9:59:59"  , 2, track_name_in+".point.split.2.mp3", PREVIEW
+end
 
+if (!skipsecond)
+convert_chapter SPLIT_POINT , "9:59:59"  , 2, track_name_in+".point.split.2.mp3", PREVIEW
+end
    

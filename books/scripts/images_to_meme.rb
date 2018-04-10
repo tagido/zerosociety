@@ -33,12 +33,22 @@ if ARGV[0].nil?
 else
 	metadata.title = ARGV[0]
 end
+
+if ARGV[1].nil?
+	metadata.text = "Só neste país,é que se diz: «Só neste país»"
+else
+	metadata.text = File.open(ARGV[1], "r:UTF-8", &:read)
+end
+
 metadata.author = "Desconhecido"
 
 # TODO: font and box size proportional to the image size
 #       or resizing original file
 #       or adding extra space to the left of the image
+#       text margins
 # target dirs
 
-image_add_text ARGV[0], ARGV[0]+"_meme.png", "Oh, mar salgado, quanto do teu sal, sao lagrimas\n de portugal"
+# args: "gravity"
+
+image_add_text ARGV[0], ARGV[0]+"_meme.png", metadata.text
 

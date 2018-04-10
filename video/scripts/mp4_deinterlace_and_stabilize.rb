@@ -41,11 +41,14 @@ def convert_chapter input_file_name,file_index, target_path
 	target_yaddif_filename="#{target_path}\\#{File.basename(input_file_name)}.yadif.mpg"
 	target_stabilized_filename="#{target_path}\\#{File.basename(input_file_name)}.yadif.deshaker.mpg"
    
-   target_tv_system="pal-dvd"
-   #target_tv_system="ntsc-dvd"
+   #tmp
+   target_yaddif_filename=input_file_name
    
-   target_aspect_ratio="16:9"
-   #target_aspect_ratio="4:3"
+   #target_tv_system="pal-dvd"
+   target_tv_system="ntsc-dvd"
+   
+   #target_aspect_ratio="16:9"
+   target_aspect_ratio="4:3"
    
    metadata = "-metadata title=\"Track #{file_index}\" -metadata artist=\"Pedro\" -metadata genre=\"#{genre}\" -metadata date=\"#{date}\" -metadata album=\"#{album}\" -metadata track=\"#{file_index}\""
    
@@ -56,9 +59,9 @@ def convert_chapter input_file_name,file_index, target_path
    #filter="-vf \"bwdif\" -vf eq=1.2:0:1.6:1:1:1:1:1"
 
    #Deinterlace to 50 fps -aspect 16:9
-   system "\"#{FFMPEG_PATH}ffmpeg\" #{FFMPEG_HDACCEL} -i \"#{input_file_name}\" -aspect #{target_aspect_ratio} #{filter} -c:v mpeg2video -b:v 6000k -target #{target_tv_system} #{metadata}  \"#{target_yaddif_filename}\""
+   #system "\"#{FFMPEG_PATH}ffmpeg\" #{FFMPEG_HDACCEL} -i \"#{input_file_name}\" -aspect #{target_aspect_ratio} #{filter} -c:v mpeg2video -b:v 6000k -target #{target_tv_system} #{metadata}  \"#{target_yaddif_filename}\""
 
-   return
+#return
    
    #Get motion vectors
    system "\"#{FFMPEG_PATH}ffmpeg\" #{FFMPEG_HDACCEL} -i \"#{target_yaddif_filename}\" -vf \"vidstabdetect=stepsize=6:shakiness=8:accuracy=9:result=transform_vectors2.trf\" -f null -"

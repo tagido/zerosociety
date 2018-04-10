@@ -721,10 +721,12 @@ def image_add_text source_filename, target_filename, text
 
 	#call_ImageMagick_raw " \"#{source_filename}\" -undercolor #00000080 -font Candice -pointsize 72 -fill Navy -gravity east  -size 320x -stroke #000C -strokewidth 2 -annotate 0 caption:\"#{text}\" -stroke  none -fill white  -annotate 0 \"#{text}\" \"#{target_filename}\""
 	
-	font_size = "172" 
-	caption_box_size = "1020x1640"
+	font_size = "62" 
+	#caption_box_size = "1020x1640"
+	caption_box_size = "800x1400"
+	gravity = "west"
 	
-	call_ImageMagick_raw " \"#{source_filename}\" ( -background none -undercolor #00000080  -fill white  -font Corsiva -pointsize #{font_size} -gravity east -size #{caption_box_size} caption:\"#{text}\" ) -compose over -composite \"#{target_filename}\""
+	call_ImageMagick_raw " \"#{source_filename}\" ( -background none -undercolor #00000080  -fill white  -font Corsiva -pointsize #{font_size} -gravity #{gravity} -size #{caption_box_size} caption:\"#{text}\" ) -compose over -composite \"#{target_filename}\""
 
 
 end
@@ -840,6 +842,7 @@ end
 # Video utils
 #
 FFMPEG_DEFAULT_PATH="D:\\Program Files\\ffmpeg-20180102\\bin\\"
+FFMPEG_DEFAULT_HDACCEL="-hwaccel dxva2 -threads 1"
 
 def call_ffmpeg_raw cmd_options, preview
    conv_command = "\"#{FFMPEG_DEFAULT_PATH}ffmpeg.exe\"  #{cmd_options} "
@@ -850,4 +853,28 @@ def call_ffmpeg_raw cmd_options, preview
    if (!preview)
 	system "#{conv_command}\n"
    end
+end
+
+def video_extract_jpg_thumbnails tmp_vob_filename, options
+
+   system "mkdir #{tmp_vob_filename}.images"
+   
+   if options.scale.nil?
+	options.scale = "720:576"
+   end
+
+  if options.fps.nil?
+	options.fps = "1/60"
+   end
+  
+  if options.subtitles.nil?
+	subtiles = ""
+  else
+    subtitles = "subtitles=#{options.subtitles},"
+  end
+    
+  
+ 
+   call_ffmpeg_raw  "#{FFMPEG_DEFAULT_HDACCEL} -i \"#{tmp_vob_filename}\"  -vf \"#{subtitles}scale=#{options.scale},yadif,fps=#{options.fps}\" \"#{tmp_vob_filename}.images\\img%03d.png\" ", false
+   
 end

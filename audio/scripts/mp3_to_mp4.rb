@@ -44,9 +44,11 @@ TARGET_PATH=".\\"
 #IMAGE_PATH="\"d:\\Mais imagens\\Cartazes\\DJ Estaline\\Caixode do lixo.jpg\""
 #IMAGE_PATH="\"d:\\Mais imagens\\Cartazes\\DJ Estaline\\botastexas.jpg\""
 #IMAGE_PATH=".\\Mito_Duplo_Radio_Full_HD_v2.jpg"
-IMAGE_PATH="\"G:\\Downloads\\Israel\\MArina.jpg\""
+#IMAGE_PATH="\"G:\\Downloads\\Israel\\MArina.jpg\""
 
 MP3_PATH = ARGV[0]
+
+IMAGE_PATH="\"#{MP3_PATH}.png\""
 
 puts "mp3_to_mp4.rb - Creates an mp4 video with the given mp3 audio file and an image"
 puts "-------------"
@@ -63,9 +65,11 @@ if MP3_PATH
 	
 	puts "MP3 duration=#{mp3_duration}"
 
+	seconds_per_image=20
+		
     puts "Converting...\n\n"	
 	# -pix_fmt yuv420p 
-	system "\"#{FFMPEG_PATH}ffmpeg.exe\" -loop 1 -i #{IMAGE_PATH} -i \"#{MP3_PATH}\" -t #{mp3_duration} \"#{MP4_PATH}\""
+	system "\"#{FFMPEG_PATH}ffmpeg.exe\" -loop 1 -framerate 1 -i #{IMAGE_PATH} -i \"#{MP3_PATH}\" -t #{mp3_duration} -pix_fmt yuv420p \"#{MP4_PATH}\""
 else
 
 	puts "Invalid args"

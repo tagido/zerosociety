@@ -25,6 +25,7 @@
 #   along with this program; if not, write to the Free Software
 #   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
+require_relative "../../framework/scripts/framework_utils.rb"
 
 def convert_chapter start_time,end_time,file_index, track_name
 	date=  "2006"
@@ -55,9 +56,25 @@ def duration_to_seconds duration
 	return components[0].to_i * 60 + components[1].to_i
 end
 
+def HMS_duration_to_seconds duration
+	components = duration.split(':')
+	
+	return components[0].to_i * 60 + components[1].to_i
+end
+
 def parse_track_list tracks_text_file
 
   tracks_list = tracks_text_file.scan(/(.*)?( \t)([0-9]+\:[0-9][0-9])+/)
+
+  print "tracks_list= #{tracks_list}\n\n"
+  
+  return tracks_list
+end
+
+
+def parse_track_list__cue_file tracks_text_file
+
+  tracks_list = tracks_text_file.scan(/([0-9][0-9]+\:[0-9][0-9]+\:[0-9][0-9])+/)
 
   print "tracks_list= #{tracks_list}\n\n"
   
@@ -71,11 +88,13 @@ TARGET_PATH="G:.\\"
 TARGET_FILENAME=ARGV[0]
 #TARGET_FORMAT="mp3"
 TARGET_FORMAT="flac"
-TRACKLIST_FILENAME="#{TARGET_FILENAME}.tracks.txt"
+#TRACKLIST_FILENAME="#{TARGET_FILENAME}.tracks.txt"
+TRACKLIST_FILENAME=ARGV[1]
 
 START_OFFSET = 0
-SILENCE_BETWEEN_TRACKS = 2
+SILENCE_BETWEEN_TRACKS = 0
 
+mode="cue"
 
 #PREVIEW=true
 PREVIEW=false
@@ -89,7 +108,7 @@ puts "Splitting...\n\n"
 
 puts stats_raw
 
-tracks = parse_track_list stats_raw
+tracks = parse_track_list__cue_file stats_raw
 
 print "tracks= #{tracks}\n\n"
 
@@ -98,20 +117,57 @@ index = 1
 
 next_position = START_OFFSET
 
+cue_skiped_first = false
+accum_duration = 0
+
 tracks.each do |i|
 
    track_name = i[0]
-  
-   puts "Parsed track info  .. #{i[0]} - #{i[2]}"
-   duration = duration_to_seconds i[2]
-   
-   end_position = duration + next_position
-   
-   puts "Track #{index} interval: #{next_position} .. #{end_position} (s) \t\t(duration=#{duration} s)"
-   if (!PREVIEW && (duration > 0) )
-		convert_chapter next_position  , end_position , index, track_name
+
+   if (mode=="txt")
+	   puts "Parsed track info  .. #{i[0]} - #{i[2]}"
+	   duration = duration_to_seconds i[2]
+	   
+	   end_position = duration + next_position
+	   
+	   puts "Track #{index} interval: #{next_position} .. #{end_position} (s) \t\t(duration=#{duration} s)"
+	   if (!PREVIEW && (duration > 0) )
+			convert_chapter next_position  , end_position , index, track_name
+	   end
+	   
+	   next_position = end_position + SILENCE_BETWEEN_TRACKS
+	   index = index + 1;
+   else
+	  # mode=cue
+	   puts "Parsed track info  .. #{i[0]}"
+	   
+	   if (not cue_skiped_first)
+		# first item
+		cue_skiped_first = true
+		accum_duration = 0
+		next
+	   end
+	   
+	   duration = HMS_duration_to_seconds i[0]
+	   
+	   end_position = duration - accum_duration + next_position
+	   
+	   puts "Track #{index} interval: #{next_position} .. #{end_position} (s) \t\t(duration=#{(duration-accum_duration)/60.0} min)"
+	   if (!PREVIEW && (duration > 0) )
+			convert_chapter next_position  , end_position , index, track_name
+	   end
+	   
+	   next_position = end_position + SILENCE_BETWEEN_TRACKS
+	   
+	   accum_duration = end_position
+	   
+	   index = index + 1;
+	  
+	  
    end
    
-   next_position = end_position + SILENCE_BETWEEN_TRACKS
-   index = index + 1;
 end
+
+track_name = "Last track"
+convert_chapter next_position  , duration_to_seconds("99:59") , index, track_name
+
