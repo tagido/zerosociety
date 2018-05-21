@@ -878,3 +878,11 @@ def video_extract_jpg_thumbnails tmp_vob_filename, options
    call_ffmpeg_raw  "#{FFMPEG_DEFAULT_HDACCEL} -i \"#{tmp_vob_filename}\"  -vf \"#{subtitles}scale=#{options.scale},yadif,fps=#{options.fps}\" \"#{tmp_vob_filename}.images\\img%03d.png\" ", false
    
 end
+
+def audio_show_metadata filename
+	call_ffmpeg_raw "-i \"#{filename}\" -hide_banner", false
+end
+
+def audio_add_metadata source_filename, target_filename, metadata
+	call_ffmpeg_raw "-i \"#{source_filename}\" #{metadata} -c:a copy \"#{target_filename}\"", false
+end
