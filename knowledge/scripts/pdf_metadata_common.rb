@@ -75,22 +75,24 @@
 	
 	#remove "strange" chars - \u00A0 u00A4
 	#@title=@title.encode("Windows-1252","UTF-8")
-	@title.gsub!(/\u00A0/, ' ')
-	@title.gsub!(/\t/, ' ')
+	begin 
+		@title.gsub!(/\u00A0/, ' ')
+		@title.gsub!(/\t/, ' ')
+	
+		#remove leading non-letter chars
+		@title = @title.gsub(/\A[\d_\W]+|[\d_\W]+\Z/, '')
 
-	
-	#remove leading non-letter chars
-	@title = @title.gsub(/\A[\d_\W]+|[\d_\W]+\Z/, '')
-
-	#looks like a long unix filename ?
-	
-	# looks like a URL ?
-	
-	#remove leading University of ...
-	
-	# remove doi:..., arXiv:1404.7828 ...
-	
+		#looks like a long unix filename ?
+		
+		# looks like a URL ?
+		
+		#remove leading University of ...
+		
+		# remove doi:..., arXiv:1404.7828 ...
+	rescue => exception
+		print "!!! Somenthing went wrong with title=#{@title} \n#{exception.backtrace} \n"
 	end
+   end
  
    def set_author_from_pdf_metadata author
 	if !author.nil?
@@ -196,6 +198,9 @@
 		possible_title = page.text.inspect.strip.gsub(/\\n/, " ").gsub(/\s+/," ")[0..200]
 	    print "possible title: #{possible_title} \n"
 		paper_metadata.set_title_from_pdf_first_page possible_title
+		
+		# TODO: try to get an author name from the second line of the title
+		
 	  end 
 	  
 	  page_no = page_no + 1
