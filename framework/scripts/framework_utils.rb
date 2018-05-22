@@ -22,6 +22,10 @@
 require 'time'
 require 'ostruct'
 
+require 'uri'
+require 'find'
+require 'fileutils'
+include FileUtils::Verbose
 
 # Wait for the spacebar key to be pressed
 def wait_for_spacebar
@@ -776,7 +780,8 @@ end
 
 def copy_and_rename_file_to_target_dir file, new_name, target_dir
 	print "Copying and renaming file: #{file} to \"#{target_dir}\"\\#{new_name}  \n\n"
-	system "xcopy \"#{file}\" \"#{target_dir}\"\\#{new_name}"
+	#system "xcopy \"#{file}\" \"#{target_dir}\"\\#{new_name}"
+	FileUtils.cp file,  "#{target_dir}\\#{new_name}"
 end
 
 def delete_file target_archive
@@ -795,7 +800,22 @@ def dump_file_from_string target_filename, string
 	
 end
 
+# inspired by https://gist.github.com/charlesroper/166433
+#
+BADCHARS = /([<>\|:\*…\"\?\\“”↵—↓↵‘’\/])/
 
+def sanitize_filename(f)
+
+	# remove bad utf-8 chars
+	tmpf = f.encode('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '')   
+
+	return URI.escape(tmpf, BADCHARS).chomp
+end
+
+def verbose_rename (orig_name, new_name)
+  File.rename(orig_name, new_name)
+  puts orig_name + " --> " + new_name
+end
 
 #
 # Zipping and Unzipping

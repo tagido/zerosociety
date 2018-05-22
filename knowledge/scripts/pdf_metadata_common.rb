@@ -20,7 +20,8 @@
 # Uses: https://github.com/yob/pdf-reader
  
  require 'pdf-reader'
- 
+ require_relative "../../framework/scripts/framework_utils.rb"
+ require 'Timeout'
  
  def print_pdf_info_elements pdf_info
 	print "PDF Info elements =\n"
@@ -51,7 +52,7 @@
   end
   
   def set_title_from_pdf_metadata title
-	if (!title.nil?) and !(title.start_with?("Microsoft Word - ")) then
+	if (!title.nil?) and !(title.start_with?("Microsoft Word - ")) and !title.start_with?("pnas")then
 		@title=title.strip
 	end
   end
@@ -94,14 +95,37 @@
 	end
    end
  
-   def set_author_from_pdf_metadata author
-	if !author.nil?
-		@author=author.strip
+   def clean_author
+	if @author.nil? then
+		return
+	end
+	
+	# is author too long ?
+	if  @author.length >=25 then
+	    @author=@author.slice(0, 25)
 	end
 	
 	# TODO: remove empty authors
-	
+	if  @author.length == 0 then
+		@author="UNK"
+	end
    end
+ 
+   def set_author_from_pdf_metadata author
+	if !author.nil? and author.length > 0 
+		@author=author.strip
+	end
+   end
+ 
+  def set_author_from_pdf_first_page lines
+  
+	if (@author == "UNK") and (!lines.nil?) then
+		@author=lines[2].strip
+	end
+  
+	# truncate very long names
+  
+  end
  
   def get_metadata_from_pdf_info_elements pdf_info
 	print "PDF Info elements =\n"
@@ -132,25 +156,40 @@
 		new_year = "0000"
 	end
   
+    if @title.nil? or @title.length==0 or  @title=="UNK"
+		@title=File.basename @filename
+	end
+  
 	new_filename = "#{new_year}_#{@author}_#{@title}.pdf"
 	
-	# TODO: remove invalid filename chars
+	# TODO: handle null @title => use original filename without extension
 	
 	# TODO: add trailing numbers if two files generate the same name
+	new_filename = sanitize_filename(new_filename)
 	
 	return new_filename
   end
+  
+  def move_and_rename target_path
+	new_filename = target_path + "\\" +get_new_filename
+	print "### Moving #{@filename} to #{new_filename} ...\n"
+	copy_and_rename_file_to_target_dir @filename,get_new_filename, target_path
+  end
  
   def dump
+  status = Timeout::timeout(5) {
+	# Something that should be interrupted if it takes more than 5 seconds...
+
 	print "File: #{@filename}\n"
 	print "Title: #{@title}\n"
 	print "Author: #{@author}\n"
 	print "Year: #{@year}\n"
 	print "SuggestedNewName: #{get_new_filename}\n"
 	print "\n"
+	}
   end
  
- end
+end
  
  def print_pdf_info pdf_file
  
@@ -174,20 +213,23 @@
 	all_dates = Array.new
 	
 	reader.pages.each do |page|
-	  print "\n###--- Page No.=#{page_no}" #" , #{page.text.inspect.strip[0..100]}"
 	  
 	  # TODO: skip most pages for file with many pages
+	  if page_no > (reader.pages.length-3) then
+		  print "\n###--- Page No.=#{page_no}" #" , #{page.text.inspect.strip[0..100]}"
+
+		  dates = page.text.inspect.strip.scan(/\((\d\d\d\d)\)/)
+		  if dates.size == 0 then
+			# try other format
+			dates = page.text.inspect.strip.scan(/(\d\d\d\d)/)
+		  end
+		  
+		  print "###--- dates #{dates.size}\n"
+		  
+		  if dates.size > 0 then
+			all_dates << dates
+		  end
 	  
-	  dates = page.text.inspect.strip.scan(/\((\d\d\d\d)\)/)
-	  if dates.size == 0 then
-	    # try other format
-		dates = page.text.inspect.strip.scan(/(\d\d\d\d)/)
-	  end
-	  
-	  print "###--- dates #{dates.size}\n"
-	  
-	  if dates.size > 0 then
-		all_dates << dates
 	  end
 	  
       #puts page.fonts
@@ -200,7 +242,13 @@
 		paper_metadata.set_title_from_pdf_first_page possible_title
 		
 		# TODO: try to get an author name from the second line of the title
-		
+		lines = page.text.inspect.strip.split('\n')
+		lines = lines.reject { |c| c.empty? }
+		print "### ### lines: length=#{lines.length} \n"
+		print "### ### lines: 0=#{lines[0]} \n"
+		print "### ### lines: 1=#{lines[1]} \n"
+		print "### ### lines: 2=#{lines[2]} \n"	
+		paper_metadata.set_author_from_pdf_first_page lines
 	  end 
 	  
 	  page_no = page_no + 1
@@ -230,11 +278,16 @@
 		print "###--- #{exception.backtrace} \n"
 	end
 	
+	paper_metadata.clean_author
 	paper_metadata.clean_title
 	paper_metadata.dump
 	
 	return paper_metadata
 end
+
+
+
+PDF_TARGET_PATH="G:\\TEMP\\PDF\\Inbox"
 
 def check_for_pdf_files pdf_path
 
@@ -247,8 +300,22 @@ def check_for_pdf_files pdf_path
 
 	puts "Found files:\n #{caps} \n\n"
 
+	
 	caps.each do |i|
-		print_pdf_info i[0]	 
+		STDERR.write "#{i[0]} \n"
+	
+		begin 
+		status = Timeout::timeout(15) {	
+			info = print_pdf_info i[0]	 
+		
+			if !info.nil? then
+				info.move_and_rename PDF_TARGET_PATH
+			end
+		}
+		rescue
+			STDERR.write "!!! TIMED-OUT #{i[0]} \n"
+		end
+		
 	end
 
 end
