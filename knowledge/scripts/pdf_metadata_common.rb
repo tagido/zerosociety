@@ -45,6 +45,7 @@
 	@year=-1
 	@title="UNK"
 	@author="UNK"
+	@n_skipped_first_page_lines = 0
   end
  
   def set_year year
@@ -52,14 +53,61 @@
   end
   
   def set_title_from_pdf_metadata title
-	if (!title.nil?) and !(title.start_with?("Microsoft Word - ")) and !title.start_with?("pnas")then
+	if (!title.nil?) and 
+	   !(title.start_with?("Microsoft Word - ")) and  
+	   !(title.start_with?("PII: ")) and 	   
+	   !title.start_with?("pnas") then
 		@title=title.strip
 	end
   end
   
-  def set_title_from_pdf_first_page title
-	if (@title == "UNK" or  @title.length <=20) and (!title.nil?) then
-	@title=title.strip
+  def set_title_from_pdf_first_page title, lines
+	
+	begin
+  
+  		print "\nx0xx @n_skipped_first_page_lines=#{@n_skipped_first_page_lines} ...\n"
+		print "lines[@n_skipped_first_page_lines]=#{lines[@n_skipped_first_page_lines]}\n"
+		b = lines[@n_skipped_first_page_lines].include? "New Political Economy"
+		print "#{b}\n"
+
+		while !lines.nil? and 
+		  (lines[@n_skipped_first_page_lines].include? "http://" or 
+		   lines[@n_skipped_first_page_lines].include? "https://" or
+		   lines[@n_skipped_first_page_lines].include? "doi:" or
+		   lines[@n_skipped_first_page_lines].include? "New Political Economy" or
+		   lines[@n_skipped_first_page_lines].include? "personal copy" or
+		   lines[@n_skipped_first_page_lines].include? "Journal" or	  
+		   lines[@n_skipped_first_page_lines].include? "JOURNAL" or	   		   
+		   lines[@n_skipped_first_page_lines].include? "www.elsevier.com" or
+		   lines[@n_skipped_first_page_lines].include? "SciVerse ScienceDirect" or	   
+		   lines[@n_skipped_first_page_lines].include? "week ending" or 
+		   lines[@n_skipped_first_page_lines].include? "\"REVIEW" or
+		   lines[@n_skipped_first_page_lines].include? "Proceedings" or
+		   lines[@n_skipped_first_page_lines].include? "June" or # TODO: dates	  
+		   lines[@n_skipped_first_page_lines].include? "PHYSICAL REVIEW LETTERS") 
+			
+			@n_skipped_first_page_lines = @n_skipped_first_page_lines + 1
+			 		
+			print "\nx1xx @n_skipped_first_page_lines=#{@n_skipped_first_page_lines} ...\n"
+
+		end
+		new_title=lines[0 + @n_skipped_first_page_lines].strip 
+		
+		# Concat next line if it does not look like an author
+		if lines[1 + @n_skipped_first_page_lines].strip.count('.') == 0 and lines[1 + @n_skipped_first_page_lines].strip.count(',') == 0
+		 new_title=new_title+lines[1 + @n_skipped_first_page_lines].strip
+		 @n_skipped_first_page_lines = @n_skipped_first_page_lines + 1
+		end
+		
+		print "\nxxx @n_skipped_first_page_lines=#{@n_skipped_first_page_lines} ...\n"
+	
+		if (@title == "UNK" or  @title.length <=20) and (!new_title.nil?) then
+			@title=new_title.strip
+		end		
+	
+	
+	rescue => exception
+		print "!!! Somenthing went wrong with title\n#{exception.backtrace} \n"
 	end
   end
   
@@ -73,6 +121,8 @@
 	if  @title.length >=100 then
 	    @title=@title.slice(0, 100)
 	end
+	
+	# TODO: replace multiple consecutive spaces
 	
 	#remove "strange" chars - \u00A0 u00A4
 	#@title=@title.encode("Windows-1252","UTF-8")
@@ -105,10 +155,19 @@
 	    @author=@author.slice(0, 25)
 	end
 	
-	# TODO: remove empty authors
+	# remove empty authors
 	if  @author.length == 0 then
 		@author="UNK"
 	end
+	
+	# TODO: remove numbers
+	
+	# TODO: remove known prefixes: "Author(s):"
+	
+	# TODO: remove email addresses eg: "joe@diskserver.castanet.com Joe Pickert"
+	
+	# replace tabs
+	@author.gsub!(/\t/,' ')
    end
  
    def set_author_from_pdf_metadata author
@@ -120,7 +179,24 @@
   def set_author_from_pdf_first_page lines
   
 	if (@author == "UNK") and (!lines.nil?) then
-		@author=lines[2].strip
+	
+		print "@n_skipped_first_page_lines=#{@n_skipped_first_page_lines} ...\n"
+	
+		@n_skipped_first_page_lines = @n_skipped_first_page_lines + 1
+	
+	    new_author = lines[@n_skipped_first_page_lines].strip.gsub(/ /,'')
+		while (new_author.include? "Article" or 
+				new_author.include? "author" or 
+				new_author.include? "DOI:" or 
+				new_author.include? "CITATIONS" or new_author.length < 9)
+			@n_skipped_first_page_lines = @n_skipped_first_page_lines + 1
+			new_author = lines[@n_skipped_first_page_lines].strip.gsub(/ /,'')
+		end
+		
+		# restore spaces
+		new_author = lines[@n_skipped_first_page_lines].gsub(/[\s\b\v]+/, " ").strip
+		
+		@author=new_author
 	end
   
 	# truncate very long names
@@ -212,6 +288,8 @@ end
 	
 	all_dates = Array.new
 	
+	n_skipped_pages_at_the_begining = 0
+	
 	reader.pages.each do |page|
 	  
 	  # TODO: skip most pages for file with many pages
@@ -236,19 +314,39 @@ end
       #puts page.text
       #puts page.raw_content
 	  
-	  if page_no==1 then
-		possible_title = page.text.inspect.strip.gsub(/\\n/, " ").gsub(/\s+/," ")[0..200]
-	    print "possible title: #{possible_title} \n"
-		paper_metadata.set_title_from_pdf_first_page possible_title
-		
-		# TODO: try to get an author name from the second line of the title
-		lines = page.text.inspect.strip.split('\n')
-		lines = lines.reject { |c| c.empty? }
-		print "### ### lines: length=#{lines.length} \n"
-		print "### ### lines: 0=#{lines[0]} \n"
-		print "### ### lines: 1=#{lines[1]} \n"
-		print "### ### lines: 2=#{lines[2]} \n"	
-		paper_metadata.set_author_from_pdf_first_page lines
+	  if page_no==(1 + n_skipped_pages_at_the_begining) then
+	  
+		page_raw_content=page.text.inspect.strip.gsub(/\\n/, " ").gsub(/\s+/," ")
+		if !page_raw_content.include?("http://www.tandfonline.com/action/journalInformation") and
+		   !page_raw_content.include?("https://www.researchgate.net/publication") and
+		   !page_raw_content.include?("SFI WORKING PAPER") and	
+		   !page_raw_content.include?("This article appeared in a journal published by Elsevier") then
+	  
+			possible_title = page.text.inspect.strip.gsub(/\\n/, " ").gsub(/\s+/," ")[0..200]
+			print "possible title: #{possible_title} \n"
+			
+			# TODO: try to get an author name from the second line of the title
+			lines = page.text.inspect.strip.split('\n')
+			lines = lines.reject { |c| c.empty? }
+			print "### ### lines: length=#{lines.length} \n"
+			if lines.length > 1
+				print "### ### lines: 0=#{lines[0]} \n"
+				print "### ### lines: 1=#{lines[1]} \n"
+				print "### ### lines: 2=#{lines[2]} \n"	
+				print "### ### lines: 3=#{lines[3]} \n"	
+				print "### ### lines: 4=#{lines[4]} \n"	
+
+				
+				paper_metadata.set_title_from_pdf_first_page possible_title, lines
+
+				paper_metadata.set_author_from_pdf_first_page lines
+			else
+				print "### ### No text found, trying OCR ... \n"
+				# TODO: OCR page
+			end
+		else
+			n_skipped_pages_at_the_begining = n_skipped_pages_at_the_begining + 1
+		end
 	  end 
 	  
 	  page_no = page_no + 1
@@ -276,6 +374,8 @@ end
 	rescue => exception
 		print "###--- unhandled exception reading PDF file #{pdf_file}\n"
 		print "###--- #{exception.backtrace} \n"
+		
+		# TODO: revert to OCR pages, if possible
 	end
 	
 	paper_metadata.clean_author
@@ -294,9 +394,15 @@ def check_for_pdf_files pdf_path
 	puts "Checking for pdf files ..."
 	puts "-------------\n\n"
 
-	pdf_files= `dir #{pdf_path}\\*.pdf\ /b /s /a-d`
-
+	if File.directory?(pdf_path)
+		pdf_files= `dir #{pdf_path}\\*.pdf\ /b /s /a-d`
+	else
+		pdf_files= `dir #{pdf_path} /b`
+	end
+	
 	caps = pdf_files.scan(/(.*)\n/)
+
+		
 
 	puts "Found files:\n #{caps} \n\n"
 
