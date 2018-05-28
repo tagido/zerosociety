@@ -24,6 +24,46 @@ require_relative "../../framework/scripts/framework_utils.rb"
 require 'Timeout'
 require 'bibtex'
 require 'nokogiri'
+require 'csv'
+
+#
+# inspired by https://darrennewton.com/2010/09/05/convert-csv-to-text-with-ruby/
+#
+def csv_to_array(file_location)
+ csv = CSV::parse(File.open(file_location, 'r') {|f| f.read }, { :col_sep => "\t" })
+ fields = csv.shift
+ csv.collect { |record| Hash[*fields.zip(record).flatten ] } 
+end
+
+RANKINGS = csv_to_array('D:\Mais documentos\Projectos\Ruby scripts\zerosociety\knowledge\scripts\resources\CORE_2018_ConferenceRanking.csv')
+#print RANKINGS
+def dump_rankings
+  RANKINGS.each do |row|
+   print "#{row["shortname"]},"
+  end
+end
+
+def get_ranking_by_shortname shortname
+  begin
+  if shortname.nil?
+	return nil
+  end
+
+  RANKINGS.each do |row|
+     print "#{row["shortname"]},"
+
+   if !row["shortname"].nil? and (row["shortname"].strip == shortname) then
+	return row
+   end
+  end
+  
+  rescue
+  end
+  
+  return nil
+end
+
+dump_rankings
 
  def print_pdf_info_elements pdf_info
 	print "PDF Info elements =\n"
@@ -49,22 +89,46 @@ require 'nokogiri'
 	@author="UNK"
 	@n_skipped_first_page_lines = 0
     @doi=""
+	@proceedings=""
+	@proceedings_start_page = ""
+	@proceedings_end_page = ""
+	@proceedings_conference_acronym = ""
+	@proceedings_conference_short_year = ""	
+
 	
 	@bibref = BibTeX::Entry.new
 	@bibref.type = :article
 
+
   end
  
-  def set_year year
+  def set_year_from_all_text year
+	if (@year==-1)
+		@year=year
+	end
+  end
+  
+  def set_year_from_proceedings year
 	@year=year
+  end
+  
+  def clean_metadata_string metatata_str
+	print "###  clean_metadata_string (encoding=#{metatata_str.encoding}) #{metatata_str} \n"
+	#metatata_str.gsub!(/\\u2019/,'\'')
+	metatata_str=metatata_str.strip.encode("US-ASCII",:undef => :replace, :invalid => :replace, :replace => "")
+	print "###     cleaned= (encoding=#{metatata_str.encoding}) #{metatata_str} \n"
+	
+	return metatata_str
   end
   
   def set_title_from_pdf_metadata title
 	if (!title.nil?) and 
 	   !(title.start_with?("Microsoft Word - ")) and  
-	   !(title.start_with?("PII: ")) and 	   
+	   !(title.start_with?("PII: ")) and 
+	   !(title.start_with?("Acrobat Distiller")) and   
+	   !(title.start_with?("Proceedings Template")) and
 	   !title.start_with?("pnas") then
-		@title=title.strip
+		@title=clean_metadata_string(title)
 	end
   end
   
@@ -137,7 +201,7 @@ require 'nokogiri'
 	#remove "strange" chars - \u00A0 u00A4
 	#@title=@title.encode("Windows-1252","UTF-8")
 	begin 
-		@title.gsub!(/\u00A0/, ' ')
+		#@title.gsub!(/\u00A0/, ' ')
 		@title.gsub!(/\t/, ' ')
 	
 		#remove leading non-letter chars
@@ -178,11 +242,14 @@ require 'nokogiri'
 	
 	# replace tabs
 	@author.gsub!(/\t/,' ')
+	
+	# remove "strange chars"
+	@author.gsub!(/\\u00F6/,'oe')
    end
  
    def set_author_from_pdf_metadata author
 	if !author.nil? and author.length > 0 
-		@author=author.strip
+		@author=clean_metadata_string(author)
 	end
    end
  
@@ -232,6 +299,52 @@ require 'nokogiri'
 		print "### ### found good doi=#{@doi}\n"
 	end
 
+  end
+  
+  def set_proceedings_from_pdf_first_page raw_text
+  	print "### set_proceedings_from_pdf_first_page\n"
+	
+	proceedings = raw_text.scan(/Proceedings of the (.*?)(\n|\.)/)
+
+	print "proceedings=#{proceedings}\n"
+
+	if proceedings.length > 0
+	    @proceedings=proceedings[0][0]
+		@proceedings.gsub!(/\\u2018/,'\'')
+		@proceedings.gsub!(/\\u2019/,'\'')
+		@proceedings.gsub!(/\\u2013/,'-')
+		print "### ### found good proceedings=#{@proceedings}\n"
+		
+		# Subitems parsing
+		
+		dates =@proceedings.scan(/(\d\d\d\d)/)
+		if dates.length > 0
+			set_year_from_proceedings dates[0][0]
+		end
+		
+		pages =@proceedings.scan(/pages (\d*)-(\d*)/)
+		if pages.length > 0
+			print "### ### found good pages=#{pages}\n"
+			set_pages_from_proceedings pages[0][0],pages[0][1]
+		end
+		
+		series=@proceedings.scan(/([A-Z]{3,})\s?'(\d\d)/)    # e.g. {AAMAS '16}
+		if series.length > 0
+			print "### ### found good series=#{series}\n"
+			set_series_from_proceedings series[0][0],series[0][1]
+		end
+	end
+	
+  end
+
+  def set_pages_from_proceedings start_page, end_page
+	@proceedings_start_page = start_page
+	@proceedings_end_page =   end_page	
+  end
+  
+  def set_series_from_proceedings conference_acronym, conference_short_year
+	@proceedings_conference_acronym = conference_acronym
+	@proceedings_conference_short_year =   conference_short_year	
   end
  
   def get_metadata_from_pdf_info_elements pdf_info
@@ -288,13 +401,76 @@ require 'nokogiri'
 	@bibref.journal = "TODO"
 	@bibref.volume = "TODO"
 	@bibref.number = "TODO"
-	@bibref.pages = "TODO"
+
+	
+	
+	if !(@proceedings_start_page=="")
+		@bibref.pages = "#{@proceedings_start_page}-#{@proceedings_end_page}"
+		@bibref.numpages  = @proceedings_end_page.to_i - @proceedings_start_page.to_i + 1
+	end
+		
+
 	@bibref.keywords = "TODO"
 	@bibref.publisher = "TODO"
+	
+	# Proceedings
+	#
+	# Revistas (@article) vs Confs. (@InProceedings)
+	#  PNAS, RoyalSociety, Nature vs ... 
+	#
+	# Verificar automaticamente o "nivel" da conf
+	
 	#abstract
 	#url
 	#isbn
+	#  booktitle = {Proceedings of the 2016 International Conference on Autonomous Agents \&\#38; Multiagent Systems},
+    if 	!(@proceedings=="")
+		@bibref.type = :inproceedings
+		@bibref.booktitle = @proceedings
+	end
+	
+
+	
+	 if !(@proceedings_conference_acronym=="")
+	 	@bibref.series = "#{@proceedings_conference_acronym}'#{@proceedings_conference_short_year}"
+		@bibref.comment = "#{@bibref.comment}. Conference: #{@proceedings_conference_acronym}."
+	 
+		ranking=get_ranking_by_shortname @proceedings_conference_acronym
+		if !ranking.nil? then
+			print "found ranking=#{ranking}\n"
+			ranking_str = ranking["rank"]
+			fullname_str = ranking["fullname"]
+		else
+			ranking_str = "Not Available"
+			fullname_str = "Not Available"
+		end
+		@bibref.comment = "#{@bibref.comment}. CORE Rank: #{ranking_str}. A.K.A.: #{fullname_str}"
+		
+
+	 end
+	
+	#@InProceedings{Santos2016,
+#  author    = {Santos, Fernando P. and Santos, Francisco C. and Melo, Francisco and Paiva, Ana and Pacheco, Jorge M.},
+#  title     = {Learning to Be Fair in Multiplayer Ultimatum Games: (Extended Abstract)},
+
+#  booktitle = {Proceedings of the 2016 International Conference on Autonomous Agents \&\#38; Multiagent Systems},
+#  year      = {2016},
+#  series    = {AAMAS '16},
+
+#  pages     = {1381--1382},
+#  address   = {Richland, SC},
+#  publisher = {International Foundation for Autonomous Agents and Multiagent Systems},
+#  acmid     = {2937170},
+#  isbn      = {978-1-4503-4239-1},
+#  keywords  = {fairness, groups, learning, multiagent systems, ultimatum game},
+#  location  = {Singapore, Singapore},
+#  numpages  = {2},
+#  url       = {http://dl.acm.org/citation.cfm?id=2936924.2937170},
+#}
+
 	#crossref - The key of the cross-referenced entry
+	
+	# aspect-ratio / orientation (slides ?)
   end
   
   #
@@ -374,6 +550,8 @@ end
 	  if page_no==(1 + n_skipped_pages_at_the_begining) then
 	  
 		page_raw_content=page.text.inspect.strip.gsub(/\\n/, " ").gsub(/\s+/," ")
+		page_raw_content_with_newlines = page.text.inspect.strip
+		
 		if !page_raw_content.include?("http://www.tandfonline.com/action/journalInformation") and
 		   !page_raw_content.include?("https://www.researchgate.net/publication") and
 		   !page_raw_content.include?("SFI WORKING PAPER") and	
@@ -405,7 +583,8 @@ end
 			n_skipped_pages_at_the_begining = n_skipped_pages_at_the_begining + 1
 		end
 		
-		paper_metadata.set_doi_from_pdf_first_page page_raw_content
+		paper_metadata.set_doi_from_pdf_first_page  page_raw_content
+		paper_metadata.set_proceedings_from_pdf_first_page  page_raw_content
 	  end 
 	  
 	  page_no = page_no + 1
@@ -428,7 +607,7 @@ end
 	print "###--- all dates #{all_dates_sorted}\n"
 	print "###--- possible_paper_year #{possible_paper_year}\n"
 	
-	paper_metadata.set_year possible_paper_year
+	paper_metadata.set_year_from_all_text possible_paper_year
 	
 	rescue => exception
 		print "###--- unhandled exception reading PDF file #{pdf_file}\n"
@@ -477,8 +656,9 @@ def check_for_pdf_files pdf_path
 				info.move_and_rename PDF_TARGET_PATH
 			end
 		}
-		rescue
-			STDERR.write "!!! TIMED-OUT #{i[0]} \n"
+		rescue => exception
+			STDERR.write "!!! TIMED-OUT #{i[0]} \n#{exception.backtrace}"
+			print "!!! TIMED-OUT #{i[0]} \n#{exception.backtrace}\n"
 		end
 		
 	end
