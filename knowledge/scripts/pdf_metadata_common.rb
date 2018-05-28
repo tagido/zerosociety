@@ -35,6 +35,8 @@ def csv_to_array(file_location)
  csv.collect { |record| Hash[*fields.zip(record).flatten ] } 
 end
 
+TMP_PDF_FILE="G:\\TEMP\\PDF_METADATA.TMP.PDF"
+
 RANKINGS = csv_to_array('D:\Mais documentos\Projectos\Ruby scripts\zerosociety\knowledge\scripts\resources\CORE_2018_ConferenceRanking.csv')
 #print RANKINGS
 def dump_rankings
@@ -332,6 +334,8 @@ dump_rankings
 		if series.length > 0
 			print "### ### found good series=#{series}\n"
 			set_series_from_proceedings series[0][0],series[0][1]
+		else
+			# retry for something like: Proceedings of the 7th WSEAS International Conference on Neural Networks
 		end
 	end
 	
@@ -426,7 +430,7 @@ dump_rankings
 	#  booktitle = {Proceedings of the 2016 International Conference on Autonomous Agents \&\#38; Multiagent Systems},
     if 	!(@proceedings=="")
 		@bibref.type = :inproceedings
-		@bibref.booktitle = @proceedings
+		@bibref.booktitle = "Proceedings of the #{@proceedings}"
 	end
 	
 
@@ -479,7 +483,7 @@ dump_rankings
   def move_and_rename target_path
 	new_filename = target_path + "\\" +get_new_filename
 	print "### Moving #{@filename} to #{new_filename} ...\n"
-	copy_and_rename_file_to_target_dir @filename,get_new_filename, target_path
+	copy_and_rename_file_to_target_dir TMP_PDF_FILE,get_new_filename, target_path
   end
  
   def dump
@@ -502,11 +506,18 @@ end
  
  def print_pdf_info pdf_file
  
+	# TODO: copy first to a short name temp location
+	print "copy \"#{pdf_file}\" \"#{TMP_PDF_FILE}\"\n"
+    system "copy \"#{pdf_file}\" \"#{TMP_PDF_FILE}\""
+ 
 	paper_metadata = PdfPaperMetadata.new pdf_file
  
 	begin
+	 
+		status = Timeout::timeout(30) {	
+		
  
-    reader = PDF::Reader.new(pdf_file)
+    reader = PDF::Reader.new(TMP_PDF_FILE)
 	print "### PDF file #{pdf_file}\n"
 	print "PDF Version =#{reader.pdf_version}\n"
     print "PDF Info =#{reader.info}\n"
@@ -609,6 +620,7 @@ end
 	
 	paper_metadata.set_year_from_all_text possible_paper_year
 	
+	}
 	rescue => exception
 		print "###--- unhandled exception reading PDF file #{pdf_file}\n"
 		print "###--- #{exception.backtrace} \n"
@@ -635,7 +647,7 @@ def check_for_pdf_files pdf_path
 	if File.directory?(pdf_path)
 		pdf_files= `dir #{pdf_path}\\*.pdf\ /b /s /a-d`
 	else
-		pdf_files= `dir #{pdf_path} /b`
+		pdf_files= `dir \"#{pdf_path}\" /b/s`
 	end
 	
 	caps = pdf_files.scan(/(.*)\n/)
@@ -649,7 +661,7 @@ def check_for_pdf_files pdf_path
 		STDERR.write "#{i[0]} \n"
 	
 		begin 
-		status = Timeout::timeout(15) {	
+		status = Timeout::timeout(60) {	
 			info = print_pdf_info i[0]	 
 		
 			if !info.nil? then
