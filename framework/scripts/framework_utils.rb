@@ -784,6 +784,12 @@ def copy_and_rename_file_to_target_dir file, new_name, target_dir
 	FileUtils.cp file,  "#{target_dir}\\#{new_name}"
 end
 
+def copy_and_rename_file_to_target_file file, target_file
+	print "Copying and renaming file: #{file} to \"#{target_file}\"  \n\n"
+	#system "xcopy \"#{file}\" \"#{target_dir}\"\\#{new_name}"
+	FileUtils.cp file,  target_file
+end
+
 def delete_file target_archive
 	puts "Deleting \"#{target_archive}\"\n"
 	
