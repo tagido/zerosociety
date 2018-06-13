@@ -38,11 +38,23 @@ class MusicBrainzAlbumMetadata < AlbumMetadata
 		release2 = brainz.release(:mbid => album_mbid, :inc => 'recordings+artists+labels')
 		puts "release2=#{release2}\n"
 
-		name =   release2.release.artist_credit.name_credit.artist.name 
+		name_count =   release2.release.artist_credit.name_credit.length
+		if name_count.nil?
+			name_count = 1
+		end
+		
+		puts "name_count=#{name_count}\n"
+		
+		if name_count==1 then
+			name =   release2.release.artist_credit.name_credit.artist.name
+		else	
+			name = release2.release.artist_credit.name_credit[0].artist.name
+			# TODO: handle addtional authors
+		end
 		#name = "UNK"
 		title =  release2.release.title
 		status = release2.release.status
-		medium = release2.release.medium_list.medium
+
 		date = release2.release.date
 		year = date[0,4]
 		begin
@@ -52,16 +64,36 @@ class MusicBrainzAlbumMetadata < AlbumMetadata
 		end
 		
 		puts "### name=#{name} title=#{title} status=#{status} id=#{album_mbid}\n"
-		puts "###      medium=#{medium} \n"
-		puts "###      format=#{medium.format} tracks=#{medium.track_list[:count]} \n"
-		puts "###      date=#{date} year=#{year}\n\n"
-		medium.track_list.track.each do |i|
-		 #number="1" 
-		#			  position="1" 
-		#			  recording
-		  puts "  #{i.position} recording id=#{i.id} length=#{i.recording[:length]} title=#{i.recording.title} \n"
-			track = TrackMetadata.new i.position, i.recording.title, i.recording[:length].to_i / 1000
-			add_track track
+		
+		n_discs = release2.release.medium_list[:count].to_i
+		current_disc = 1
+		puts "### n_discs=#{n_discs}\n"
+		
+		while current_disc <= n_discs 
+			puts "### ### current_disc=#{current_disc}\n"
+			
+			if n_discs == 1
+				medium = release2.release.medium_list.medium
+			else
+				medium = release2.release.medium_list.medium[current_disc-1]
+			end
+			
+			puts "###      medium=#{medium} \n"
+			puts "###      format=#{medium.format} tracks=#{medium.track_list[:count]} \n"
+			puts "###      date=#{date} year=#{year}\n\n"
+			medium.track_list.track.each do |i|
+			 #number="1" 
+			#			  position="1" 
+			#			  recording
+			  puts "  #{i.position} recording id=#{i.id} length=#{i.recording[:length]} title=#{i.recording.title} \n"
+				track = TrackMetadata.new i.position, i.recording.title, i.recording[:length].to_i / 1000
+				
+				track.disk_index = current_disc
+				
+				add_track track
+			end
+		
+			current_disc = current_disc + 1
 		end
 		
 		@artist = name

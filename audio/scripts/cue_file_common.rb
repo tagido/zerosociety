@@ -7,20 +7,21 @@ require_relative "../../framework/scripts/framework_utils.rb"
 	end
 
 class TrackMetadata
-	attr_accessor :track_index,	:track_name, :track_duration
+	attr_accessor :track_index,	:track_name, :track_duration, :disk_index
 
 	def initialize track_index,	track_name, track_duration
 		@track_index = track_index	
 		@track_name = track_name 
 		@track_duration = track_duration
 		@ref_url = "UNK"
+		@disk_index = 1	
 	end
 	
 
 	
 	def dump
 		aux_index = "%02d" % track_index
-		print " -- #{aux_index} - #{track_name}  #{track_name.encoding} (#{seconds_to_min_secs_str(@track_duration)})  \n"
+		print " -- #{@disk_index}.#{aux_index} - #{track_name}  #{track_name.encoding} (#{seconds_to_min_secs_str(@track_duration)})  \n"
 	end
 	
 	def get_wiki_string
@@ -43,9 +44,16 @@ class AlbumMetadata
 		@total_duration = 0
 		@year = "UNK"
 		@label = "UNK"
+		
+		@n_discs = 1
 	end
 
 	def add_track track
+		
+		if track.disk_index > @n_discs
+			@n_discs = track.disk_index
+		end
+		
 		@track_array = @track_array.push track	
 		@n_tracks = @n_tracks + 1
 		
@@ -244,7 +252,7 @@ class AlbumMetadata
 
 		[[Categoria:Álbuns de #{@year}]]
 		[[Categoria:Álbuns de #{@artist}]]
-		
+		[[Categoria:Álbuns em língua portuguesa]]
 		END_WIKI
 	end
 	
@@ -254,7 +262,16 @@ class AlbumMetadata
 		print get_wiki_album_infobox
 		print get_wiki_album_article_header
 		print "== Alinhamento ==\n"
+		current_disc = 1
+
 		@track_array.each do |track|
+		
+			# Handle multi-disc album
+			if @n_discs > 1 and current_disc <=@n_discs and track.disk_index == current_disc
+				print "=== CD #{current_disc} ===\n"
+				current_disc = current_disc + 1
+			end
+			
 			print track.get_wiki_string
 		end
 		print get_wiki_album_article_footer
