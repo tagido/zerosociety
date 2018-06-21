@@ -116,3 +116,4 @@ xpto.get_metadata_from_music_brainz album_mbid
 
 xpto.export_to_wiki
 
+# TODO: generate artist navigation pre-defs 
