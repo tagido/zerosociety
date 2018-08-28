@@ -35,8 +35,8 @@ track_no = 1
 
   options=OpenStruct.new
   options.scale = "1280:720"
-  options.fps = "1"
-  options.subtitles = "Putin2018.pt.srt"
+  options.fps = "1/60"
+#  options.subtitles = "Putin2018.pt.srt"
 
 caps.each do |i|
    #puts "Value of local variable is  #{i}\n"
@@ -49,3 +49,6 @@ caps.each do |i|
    track_no = track_no + 1
 end
 
+
+# TODO: merge thumbnails in a single image
+# G:\Downloads\Viagens\Artico2018\SDV_2054.MP4.images>"d:\Program Files\ImageMagick-7.0.2-Q16\magick.exe" montage -geometry 256x144+0+0 img* out.jpg"

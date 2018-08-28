@@ -23,15 +23,17 @@ require_relative "../../framework/scripts/framework_utils.rb"
 
 
 
-def mkv_DTS_to_flac_2ch input_file_name,output_file_name
+def mkv_DTS_to_flac_2ch input_file_name,output_file_name,skip_to
 	#date=  "2017"
 	#genre= "Popcorn"
 	#album= "Popcorn NMT100"
    
    #metadata = "-metadata artist=\"Pedro\" -metadata genre=\"#{genre}\" -metadata date=\"#{date}\" -metadata album=\"#{album}\" "
+   forcechannel=""
+   forcechannel="-map 0:1"
    
    # convert audio
-   call_ffmpeg_raw "-i \"#{input_file_name}\" -acodec flac -ac 2 \"#{output_file_name}\" ", false
+   call_ffmpeg_raw "-i \"#{input_file_name}\" #{forcechannel} -ss #{skip_to} -acodec flac -ac 2 \"#{output_file_name}\" ", false
 
 end
 
@@ -53,4 +55,12 @@ if SOURCE_PATH.nil?
 	exit -1
 end
 
-mkv_DTS_to_flac_2ch SOURCE_PATH,target_video_filename
+if ARGV[1].nil? then
+	skip_to = "0:09"
+	skip_to = "0:11"
+else
+	skip_to=ARGV[1]
+end
+
+
+mkv_DTS_to_flac_2ch SOURCE_PATH,target_video_filename,skip_to
