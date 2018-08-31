@@ -25,6 +25,7 @@ require 'Timeout'
 require 'bibtex'
 require 'nokogiri'
 require 'csv'
+require_relative "./citations_txt_to_bib_common.rb"
 
 #
 # inspired by https://darrennewton.com/2010/09/05/convert-csv-to-text-with-ruby/
@@ -82,7 +83,7 @@ dump_rankings
  
  class PdfPaperMetadata 
  
-  attr_accessor :title, :year, :filename, :author
+  attr_accessor :title, :year, :filename, :author, :total_pages
   
   def initialize (filename)
 	@filename=filename
@@ -97,6 +98,7 @@ dump_rankings
 	@proceedings_conference_acronym = ""
 	@proceedings_conference_short_year = ""	
 
+	@total_pages = 0
 	
 	@bibref = BibTeX::Entry.new
 	@bibref.type = :article
@@ -516,6 +518,7 @@ dump_rankings
 	print "Author: #{@author}\n"
 	print "Year: #{@year}\n"
 	print "DOI:#{@doi}\n"
+	print "pages:#{@total_pages}\n"
 	update_bibref 
 	print "bibref:#{@bibref}\n"
 	print "SuggestedNewName: #{get_new_filename}\n"
@@ -525,6 +528,23 @@ dump_rankings
  
 end
  
+ def parse_paper_references_page page, pdf_file, page_no
+	#page_raw_content=page.text.inspect.strip.gsub(/\\n/, " ").gsub(/\s+/," ")
+	page_raw_content_with_newlines = page.text.inspect.strip.gsub(/\\n/, "\n")
+	
+	
+	page_raw_content_with_newlines = page_raw_content_with_newlines.gsub(/\s\s\s\s/,"")
+	
+	print "### <---> Refs page: \n"
+	print "---#{page_raw_content_with_newlines}---\n"
+	
+	File.write("#{PDF_TARGET_PATH}/tmp_refs.txt", page_raw_content_with_newlines)
+	
+	convert_citations_from_plain_txt_to_bib "#{PDF_TARGET_PATH}/tmp_refs.txt"
+	
+	system "copy \"#{PDF_TARGET_PATH}\\tmp_refs.txt.bib\" \"#{PDF_TARGET_PATH}\\#{File.basename(pdf_file)}.#{page_no}.bib\" "
+ end
+ 
  def print_pdf_info pdf_file
  
 	# TODO: copy first to a short name temp location
@@ -533,9 +553,11 @@ end
  
 	paper_metadata = PdfPaperMetadata.new pdf_file
  
+	page_no=0
+ 
 	begin
 	 
-		status = Timeout::timeout(30) {	
+		status = Timeout::timeout(60) {	
 		
  
     reader = PDF::Reader.new(TMP_PDF_FILE)
@@ -641,13 +663,32 @@ end
 	
 	paper_metadata.set_year_from_all_text possible_paper_year
 	
-	}
+
+
+
+		begin
+			paper_metadata.total_pages = page_no - 1
+			
+			x = reader.pages[ paper_metadata.total_pages-1 ]
+			parse_paper_references_page x, pdf_file, paper_metadata.total_pages-1
+			
+			x = reader.pages[ paper_metadata.total_pages-2 ]
+			parse_paper_references_page x, pdf_file,paper_metadata.total_pages-2
+			
+		rescue => exception
+			print "###--- REFS unhandled exception reading PDF file #{pdf_file}\n"
+			print "###--- #{exception.backtrace} \n"
+		end
+
+	} # TIMEOUT END block		
+	
 	rescue => exception
 		print "###--- unhandled exception reading PDF file #{pdf_file}\n"
 		print "###--- #{exception.backtrace} \n"
 		
 		# TODO: revert to OCR pages, if possible
 	end
+
 	
 	paper_metadata.clean_author
 	paper_metadata.clean_title
@@ -682,7 +723,7 @@ def check_for_pdf_files pdf_path
 		STDERR.write "#{i[0]} \n"
 	
 		begin 
-		status = Timeout::timeout(60) {	
+		status = Timeout::timeout(90) {	
 			info = print_pdf_info i[0]	 
 		
 			if !info.nil? then
