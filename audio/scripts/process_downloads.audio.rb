@@ -37,8 +37,14 @@ def process_downloaded_audio_file audio_file
 	
 		parsed_filename = File.basename(audio_file).scan(/(.*) - (.*).mp3/)
 		print parsed_filename
+		begin
 		author = parsed_filename[0][0]
 		track_name = parsed_filename[0][1]
+		rescue
+		author = "UNK"
+		track_name = File.basename(audio_file)
+		end
+		
 		
 		print author
 		print track_name

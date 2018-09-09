@@ -108,7 +108,18 @@ def convert_freecite_to_bibtext freecite_xml_str, ref_index
 
 end
 
+def clean_ref_possible_problems plain_text
+	print "### clean_ref_possible_problems\n"
+	numbers = plain_text.scan(/(\d*)\. (.*)/)
+	print "### ### #{numbers}\n"
+	if !numbers.nil? and !numbers[0].nil?
+		plain_text = numbers[0][1]
+	end
+end
+
 def freecite_get_citation plain_text, ref_index
+
+	
 
 	xml_citations = nil
 
@@ -142,6 +153,8 @@ def convert_citations_from_plain_txt_to_bib plain_text_file
 
 	#TODO: abrir ficheiro em UTF-8, parece estar a abrir em ascii
 	
+	begin 
+	
 	line_num=0
 	File.open(plain_text_file).each do |line|
 		print "#{line_num += 1} : #{line}"
@@ -157,6 +170,11 @@ def convert_citations_from_plain_txt_to_bib plain_text_file
 			print "### !!! Somenthing went wrong with ref \n#{exception.backtrace} \n"
 		end
 	end
+	
+	rescue => exception
+			print "### !!! Somenthing went wrong 2 with ref \n#{exception.backtrace} \n"
+	end	
+	
 
 	bib.save_to("#{plain_text_file}.bib")
 end

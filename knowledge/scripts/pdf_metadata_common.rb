@@ -528,21 +528,81 @@ dump_rankings
  
 end
  
- def parse_paper_references_page page, pdf_file, page_no
+ 
+def pdf_text_with_position_to_string text_array
+	#print "1\n"
+	
+	colno = 0
+	text = ""	
+		#print "2\n"
+
+	text_array[0].each do |column|
+		#print "3\n"
+
+		if (colno % 2) == 0 then
+			#print "column=#{column}\n"
+			text = text + " " + column
+			
+			# TODO: nao colocar espaco quando o espaco for pequeno (?)
+		end
+		colno = colno + 1
+	end	
+	
+	if text==" Re ferences" then
+		text = "References"
+	end
+	
+	return text
+end
+
+
+
+def parse_paper_references_page page, pdf_file, page_no, reader
+
+	print "### parse_paper_references_page #{page_no}\n"
+
+	begin
 	#page_raw_content=page.text.inspect.strip.gsub(/\\n/, " ").gsub(/\s+/," ")
-	page_raw_content_with_newlines = page.text.inspect.strip.gsub(/\\n/, "\n")
+	system "mkdir \"#{BIB_TARGET_PATH}\""
+	
+	#print "page=#{reader.objects.inspect}\n"
+	
+	page_raw_content_with_newlines = ""
+	
+	receiver = PDF::Reader::RegisterReceiver.new
+    page.walk(receiver)
+    
+    receiver.callbacks.each do |cb|
+		if cb[:name] == :show_text_with_positioning
+			text = pdf_text_with_position_to_string cb[:args]		
+			puts "text=#{text}\n"
+			page_raw_content_with_newlines = page_raw_content_with_newlines + text + "\n"
+		end
+	end
 	
 	
-	page_raw_content_with_newlines = page_raw_content_with_newlines.gsub(/\s\s\s\s/,"")
+	#page_raw_content_with_newlines = page.text.inspect.strip.gsub(/\\n/, "\n")
+	
+	#page_raw_content_with_newlines = page_raw_content_with_newlines.gsub(/\s\s\s\s/,"")
+	
+	page_raw_content_with_newlines_new = page_raw_content_with_newlines.split("References\n")
+	print "p=#{page_raw_content_with_newlines_new.length} #{page_raw_content_with_newlines_new} \n"
+	if !page_raw_content_with_newlines_new.nil?
+		page_raw_content_with_newlines = page_raw_content_with_newlines_new[1]
+	end
+		
 	
 	print "### <---> Refs page: \n"
 	print "---#{page_raw_content_with_newlines}---\n"
 	
-	File.write("#{PDF_TARGET_PATH}/tmp_refs.txt", page_raw_content_with_newlines)
+	File.write("#{BIB_TARGET_PATH}\\tmp_refs.txt", page_raw_content_with_newlines)
 	
-	convert_citations_from_plain_txt_to_bib "#{PDF_TARGET_PATH}/tmp_refs.txt"
+	convert_citations_from_plain_txt_to_bib "#{BIB_TARGET_PATH}/tmp_refs.txt"
+
+	rescue
+	end
 	
-	system "copy \"#{PDF_TARGET_PATH}\\tmp_refs.txt.bib\" \"#{PDF_TARGET_PATH}\\#{File.basename(pdf_file)}.#{page_no}.bib\" "
+	system "copy \"#{BIB_TARGET_PATH}\\tmp_refs.txt.bib\" \"#{BIB_TARGET_PATH}\\#{File.basename(pdf_file)}.#{page_no}.bib\" "
  end
  
  def print_pdf_info pdf_file
@@ -669,11 +729,19 @@ end
 		begin
 			paper_metadata.total_pages = page_no - 1
 			
+			begin
 			x = reader.pages[ paper_metadata.total_pages-1 ]
-			parse_paper_references_page x, pdf_file, paper_metadata.total_pages-1
+			parse_paper_references_page x, pdf_file, paper_metadata.total_pages-1, reader
+			rescue => exception
+				print "###---Failed refs page=#{paper_metadata.total_pages-1} with #{exception} \n"
+			end
 			
+			begin
 			x = reader.pages[ paper_metadata.total_pages-2 ]
-			parse_paper_references_page x, pdf_file,paper_metadata.total_pages-2
+			parse_paper_references_page x, pdf_file,paper_metadata.total_pages-2, reader
+			rescue => exception
+				print "###---Failed refs page=#{paper_metadata.total_pages-2} with #{exception} \n"
+			end
 			
 		rescue => exception
 			print "###--- REFS unhandled exception reading PDF file #{pdf_file}\n"
@@ -700,6 +768,7 @@ end
 
 
 PDF_TARGET_PATH="G:\\TEMP\\PDF\\Inbox"
+BIB_TARGET_PATH="#{PDF_TARGET_PATH}\\bib"
 
 def check_for_pdf_files pdf_path
 
