@@ -44,11 +44,11 @@ def convert_chapter input_file_name,file_index, target_path
    #tmp
    #target_yaddif_filename=input_file_name
    
-   target_tv_system="pal-dvd"
-   #target_tv_system="ntsc-dvd"
+   #target_tv_system="pal-dvd"
+   target_tv_system="ntsc-dvd"
    
-   target_aspect_ratio="16:9"
-   #target_aspect_ratio="4:3"
+   #target_aspect_ratio="16:9"
+   target_aspect_ratio="4:3"
    
    metadata = "-metadata title=\"Track #{file_index}\" -metadata artist=\"Pedro\" -metadata genre=\"#{genre}\" -metadata date=\"#{date}\" -metadata album=\"#{album}\" -metadata track=\"#{file_index}\""
    
@@ -76,8 +76,9 @@ def check_mp4_files directory, target_path
 	puts "Checking for video files ..."
 	puts "-------------\n\n"
 
-	video_files= `dir #{directory}\\*.mp4 /b /s`
-	video_files= video_files + `dir #{directory}\\*.mpg /b /s`
+	video_files= `dir #{directory}\\*.mp4 /b `
+	video_files= video_files + `dir #{directory}\\*.mpg /b `
+	video_files= video_files + `dir #{directory}\\*.avi /b `
 	
 	caps = video_files.scan(/(.*)\n/)
 

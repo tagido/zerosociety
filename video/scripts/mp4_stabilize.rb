@@ -42,6 +42,7 @@ def convert_chapter input_file_name,file_index, target_path
 
    target_stabilized_filename="#{target_path}\\#{File.basename(input_file_name)}.yadif.deshaker.mpg"
 	
+   # \"#{target_stabilized_filename}.srt\"
  
    metadata = "-metadata title=\"Track #{file_index}\" -metadata artist=\"Pedro\" -metadata genre=\"#{genre}\" -metadata date=\"#{date}\" -metadata album=\"#{album}\" -metadata track=\"#{file_index}\""
    
@@ -49,7 +50,7 @@ def convert_chapter input_file_name,file_index, target_path
    system "\"#{FFMPEG_PATH}ffmpeg\" #{FFMPEG_HDACCEL} -i \"#{input_file_name}\" -aspect #{aspect} -vf \"vidstabdetect=stepsize=6:shakiness=10:accuracy=9:result=transform_vectors2.trf\" -f null -"
 
    #Stabilize using the motion vectors     
-   system "\"#{FFMPEG_PATH}ffmpeg\" #{FFMPEG_HDACCEL} -i \"#{input_file_name}\" -aspect #{aspect} -vf \"vidstabtransform=input=transform_vectors2.trf:zoom=1,unsharp=5:5:0.8:3:3:0.4, fps=25\" -c:v mpeg2video -b:v 8000k -target ntsc-dvd #{metadata} \"#{target_stabilized_filename}\" \"#{target_stabilized_filename}.srt\""
+   system "\"#{FFMPEG_PATH}ffmpeg\" #{FFMPEG_HDACCEL} -i \"#{input_file_name}\" -aspect #{aspect} -vf \"vidstabtransform=input=transform_vectors2.trf:zoom=1,unsharp=5:5:0.8:3:3:0.4, fps=25\" -c:v mpeg2video -b:v 8000k -target pal-dvd #{metadata} \"#{target_stabilized_filename}\" "
 end
 
 
@@ -58,9 +59,12 @@ def check_mp4_files directory, target_path
 	puts "Checking for video files ..."
 	puts "-------------\n\n"
 
-	video_files= `dir #{directory}\\*.mp4 /b /s`
-	video_files=video_files + `dir #{directory}\\*.mkv /b /s`
-
+	video_files=`dir #{ARGV[0]} /b`
+	
+	if video_files.nil?
+		video_files= `dir #{directory}\\*.mp4 /b`
+		video_files=video_files + `dir #{directory}\\*.mkv /b`
+	end
 
 	caps = video_files.scan(/(.*)\n/)
 

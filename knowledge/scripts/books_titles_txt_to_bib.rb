@@ -46,6 +46,7 @@ def convert_plain_text_to_bibtext plain_text_str, ref_index
 	book = BibTeX::Entry.new
 	book.type = :book
 	
+	# Query "Openlibrary"
 	client = Openlibrary::Client.new
 	
 	title = plain_text_str.split(",")[0]
@@ -53,9 +54,13 @@ def convert_plain_text_to_bibtext plain_text_str, ref_index
 		title = plain_text_str
 	end
 	
-	results = client.search(title)
+	begin
+		results = client.search(title)
+	rescue
+		results = nil
+	end
 	
-	if (!results[0].nil?) then   
+	if (!results.nil? and !results[0].nil?) then   
 	
 			
 		puts "thing=#{results[0]}\n"
@@ -86,6 +91,10 @@ def convert_plain_text_to_bibtext plain_text_str, ref_index
 			if (!results[0].contributor.nil?)
 				tmp_author = tmp_author + " and " +results[0].contributor.join(" and ")
 			end
+			book.author = tmp_author	
+		else if (!results[0].contributor.nil?)
+			# consider entry with contributors only
+			tmp_author =results[0].contributor.join(" and ")
 			book.author = tmp_author
 		else
 			print "NO author found\n"
@@ -129,9 +138,20 @@ def convert_citations_from_plain_txt_to_bib plain_text_file
 	File.open(plain_text_file).each do |line|
 		print "#{line_num += 1} : #{line}"
 		
-		book = convert_plain_text_to_bibtext line.encode("UTF-8"), line_num
+		book_title = line.encode("UTF-8")
 		
-		bib << book
+		book_title_aux = book_title.split(('|'))
+		if book_title_aux.length > 1 then
+			book_title = book_title_aux[0]
+		end
+		
+		begin
+			book = convert_plain_text_to_bibtext book_title, line_num
+			
+			bib << book
+		rescue
+			print "Something went wrong with book #{book_title}\n"
+		end
 	end
 
 	bib.save_to("#{plain_text_file}.bib")

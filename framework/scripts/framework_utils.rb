@@ -881,6 +881,19 @@ def call_ffmpeg_raw cmd_options, preview
    end
 end
 
+
+def call_ffplay_raw cmd_options, preview
+   conv_command = "\"#{FFMPEG_DEFAULT_PATH}ffplay.exe\"  #{cmd_options} "
+
+   puts "#{conv_command}\n"
+   puts "Running ffplay ...\n"
+   
+   if (!preview)
+	system "#{conv_command}\n"
+   end
+end
+
+
 def video_extract_jpg_thumbnails tmp_vob_filename, options
 
    system "mkdir #{tmp_vob_filename}.images"

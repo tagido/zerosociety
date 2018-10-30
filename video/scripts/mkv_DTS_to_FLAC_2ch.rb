@@ -47,7 +47,7 @@ system "mkdir \"#{TARGET_PATH}\""
 
 PAUSE=false
 
-puts "\nmkv_DTS_to_AC3_2ch - converts mkv audio to be compatible with NMT100 (Popcorn hour)"
+puts "\nmkv_DTS_to_FLAC_2ch - converts mkv audio to stereo FLAC"
 puts "-------------\n\n"
 
 if SOURCE_PATH.nil?
@@ -62,5 +62,40 @@ else
 	skip_to=ARGV[1]
 end
 
+source_filename = "#{SOURCE_PATH}\\*.mkv"
 
-mkv_DTS_to_flac_2ch SOURCE_PATH,target_video_filename,skip_to
+system "dir \"#{source_filename}\" /b"
+SOURCE_FILES= `dir \"#{source_filename}\" /b`
+
+puts "#{SOURCE_FILES}\n"
+
+caps = SOURCE_FILES.scan(/(.*)\n/)
+
+puts "Found files:\n #{caps} \n\n"
+
+#mkv_DTS_to_flac_2ch SOURCE_PATH,target_video_filename,skip_to
+
+
+track_no = 1
+
+system "mkdir flac"
+
+# -metadata track=\"#{track_no}\"
+
+caps.each do |i|
+   puts "Value of local variable is  #{i}\n"
+
+   output_filename = "flac\\#{i[0]}.2ch.flac"
+ 
+   #system "\"#{FFMPEG_PATH}ffmpeg.exe\" -i \"#{i[0]}\"   \"#{output_filename}\" 2>  \"mp3\\#{i[0]}.stderr.log\""
+   
+   mkv_DTS_to_flac_2ch i[0],output_filename,skip_to
+
+
+   
+   track_no = track_no + 1
+
+   #add_jpg_cover_art_to_mp3 output_filename, "cover.jpg"
+end
+
+

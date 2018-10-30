@@ -55,6 +55,11 @@ puts "-------------"
 
 puts "mp3=#{MP3_PATH}"
 
+extra_options = "-framerate 1"
+extra_options_igtv = "-framerate 30"
+
+extra_options=extra_options_igtv
+
 if MP3_PATH
 
 	MP4_PATH = "#{MP3_PATH}.mp4"
@@ -69,7 +74,7 @@ if MP3_PATH
 		
     puts "Converting...\n\n"	
 	# -pix_fmt yuv420p 
-	system "\"#{FFMPEG_PATH}ffmpeg.exe\" -loop 1 -framerate 1 -i #{IMAGE_PATH} -i \"#{MP3_PATH}\" -t #{mp3_duration} -pix_fmt yuv420p \"#{MP4_PATH}\""
+	system "\"#{FFMPEG_PATH}ffmpeg.exe\" -loop 1 #{extra_options}  -i #{IMAGE_PATH} -i \"#{MP3_PATH}\" -t #{mp3_duration} -pix_fmt yuv420p \"#{MP4_PATH}\""
 else
 
 	puts "Invalid args"
